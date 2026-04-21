@@ -54,8 +54,11 @@ function wordpress_mcp_admin_render_audit_log_page(): void {
 		<ul class="ul-disc">
 			<li><?php echo esc_html__( 'Create posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Update existing posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Inspect the current Site Health results from WordPress.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Apply selected Site Health fixes that are already available from wp-admin.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Read and replace page, post, and custom post type block layouts while keeping them editable in the block editor.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Change page-specific designs by editing files in the active block theme.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Read theme and plugin files before updating them through MCP.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Delete posts or move them to the trash.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Install, create, edit, list, and delete themes.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Install, create, update, activate, deactivate, list, and delete plugins.', 'wordpress-mcp-admin-tools' ); ?></li>
@@ -130,6 +133,16 @@ function wordpress_mcp_admin_render_audit_log_page(): void {
 function wordpress_mcp_admin_get_admin_page_abilities(): array {
 	return array(
 		array(
+			'name'        => 'wordpress-mcp-admin/get-site-health-status',
+			'description' => __( 'Retrieve the current WordPress Site Health test results and supported fixes.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'manage_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/run-site-health-fix',
+			'description' => __( 'Apply a supported fix for a current WordPress Site Health issue.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'manage_options',
+		),
+		array(
 			'name'        => 'wordpress-mcp-admin/create-post',
 			'description' => __( 'Create a new post with the provided content.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'edit_posts',
@@ -175,6 +188,11 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'capability'  => 'edit_posts',
 		),
 		array(
+			'name'        => 'wordpress-mcp-admin/get-theme-file',
+			'description' => __( 'Read an allowed file inside an installed theme.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'edit_themes',
+		),
+		array(
 			'name'        => 'wordpress-mcp-admin/edit-page-design',
 			'description' => __( 'Create or replace a page-specific block template in the active block theme.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'edit_themes',
@@ -218,6 +236,11 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'name'        => 'wordpress-mcp-admin/create-plugin',
 			'description' => __( 'Create a new plugin scaffold and optionally activate it.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'install_plugins or edit_plugins',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-plugin-file',
+			'description' => __( 'Read an allowed file inside an installed plugin.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'edit_plugins',
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/update-plugin',

@@ -884,6 +884,84 @@ function wordpress_mcp_admin_execute_edit_theme( array $input = array() ) {
 }
 
 /**
+ * テーマファイルを取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_get_theme_file( array $input = array() ) {
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'theme', 'relative_path' ) );
+	$theme_slug    = wordpress_mcp_admin_validate_theme_slug(
+		$input['theme'] ?? '',
+		'wordpress_mcp_admin_invalid_theme',
+		__( 'A valid theme stylesheet is required.', 'wordpress-mcp-admin-tools' )
+	);
+
+	if ( is_wp_error( $theme_slug ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', false, 'theme', 0, $input_summary, $theme_slug->get_error_code(), $theme_slug->get_error_message() );
+
+		return $theme_slug;
+	}
+
+	$relative_path = wordpress_mcp_admin_normalize_theme_relative_path( isset( $input['relative_path'] ) ? (string) $input['relative_path'] : '' );
+
+	if ( is_wp_error( $relative_path ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', false, 'theme', 0, $input_summary, $relative_path->get_error_code(), $relative_path->get_error_message() );
+
+		return $relative_path;
+	}
+
+	$theme = wp_get_theme( $theme_slug );
+
+	if ( ! $theme->exists() ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_theme_not_found',
+			__( 'The specified theme could not be found.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', false, 'theme', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$target_path = trailingslashit( $theme->get_stylesheet_directory() ) . $relative_path;
+
+	if ( ! file_exists( $target_path ) || ! is_file( $target_path ) ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_theme_file_not_found',
+			__( 'The specified theme file does not exist.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', false, 'theme', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$content = file_get_contents( $target_path );
+
+	if ( false === $content ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_theme_file_read_failed',
+			__( 'Failed to read the theme file.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', false, 'theme', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-theme-file', true, 'theme', 0, $input_summary );
+
+	return array(
+		'theme'         => $theme_slug,
+		'relative_path' => $relative_path,
+		'content'       => $content,
+		'bytes'         => strlen( $content ),
+		'edit_link'     => wordpress_mcp_admin_get_theme_editor_link( $theme_slug, $relative_path ),
+	);
+}
+
+/**
  * インストール済みテーマを取得します。
  *
  * @param array<string, mixed> $input 入力値。
@@ -1349,6 +1427,94 @@ function wordpress_mcp_admin_execute_update_plugin( array $input = array() ) {
 }
 
 /**
+ * プラグインファイルを取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_get_plugin_file( array $input = array() ) {
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'plugin', 'relative_path' ) );
+	$plugin_id     = wordpress_mcp_admin_validate_plugin_identifier(
+		$input['plugin'] ?? '',
+		'wordpress_mcp_admin_invalid_plugin',
+		__( 'A valid plugin identifier is required.', 'wordpress-mcp-admin-tools' )
+	);
+
+	if ( is_wp_error( $plugin_id ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $plugin_id->get_error_code(), $plugin_id->get_error_message() );
+
+		return $plugin_id;
+	}
+
+	$relative_path = wordpress_mcp_admin_normalize_plugin_relative_path( isset( $input['relative_path'] ) ? (string) $input['relative_path'] : '' );
+
+	if ( is_wp_error( $relative_path ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $relative_path->get_error_code(), $relative_path->get_error_message() );
+
+		return $relative_path;
+	}
+
+	$plugin = wordpress_mcp_admin_resolve_plugin_entry( $plugin_id );
+
+	if ( is_wp_error( $plugin ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $plugin->get_error_code(), $plugin->get_error_message() );
+
+		return $plugin;
+	}
+
+	if ( '' === $plugin['directory'] ) {
+		if ( $relative_path !== $plugin['file'] ) {
+			$error = new WP_Error(
+				'wordpress_mcp_admin_plugin_read_requires_main_file',
+				__( 'For single-file plugins, relative_path must point to the main plugin file.', 'wordpress-mcp-admin-tools' )
+			);
+
+			wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+			return $error;
+		}
+
+		$target_path = trailingslashit( WP_PLUGIN_DIR ) . $plugin['file'];
+	} else {
+		$target_path = trailingslashit( trailingslashit( WP_PLUGIN_DIR ) . $plugin['directory'] ) . $relative_path;
+	}
+
+	if ( ! file_exists( $target_path ) || ! is_file( $target_path ) ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_plugin_file_not_found',
+			__( 'The specified plugin file does not exist.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$content = file_get_contents( $target_path );
+
+	if ( false === $content ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_plugin_file_read_failed',
+			__( 'Failed to read the plugin file.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', false, 'plugin', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-plugin-file', true, 'plugin', 0, $input_summary );
+
+	return array(
+		'plugin'        => $plugin['plugin'],
+		'relative_path' => $relative_path,
+		'content'       => $content,
+		'bytes'         => strlen( $content ),
+		'edit_link'     => wordpress_mcp_admin_get_plugin_editor_link( $plugin['plugin'] ),
+	);
+}
+
+/**
  * インストール済みプラグインを取得します。
  *
  * @param array<string, mixed> $input 入力値。
@@ -1694,6 +1860,61 @@ function wordpress_mcp_admin_execute_disable_plugin_auto_update( array $input = 
 		(string) ( $input['plugin'] ?? '' ),
 		false
 	);
+}
+
+/**
+ * Site Health 状態を取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_execute_get_site_health_status( array $input = array() ): array {
+	unset( $input );
+
+	$result = wordpress_mcp_admin_get_site_health_status();
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-site-health-status', true, 'site-health', 0, '' );
+
+	return $result;
+}
+
+/**
+ * Site Health 修正を実行します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_run_site_health_fix( array $input = array() ) {
+	$fix           = isset( $input['fix'] ) ? sanitize_key( (string) $input['fix'] ) : '';
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'fix' ) );
+
+	if ( '' === $fix ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_missing_site_health_fix',
+			__( 'A supported fix value is required.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/run-site-health-fix', false, 'site-health', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$result = wordpress_mcp_admin_apply_site_health_fix( $fix );
+
+	if ( is_wp_error( $result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/run-site-health-fix', false, 'site-health', 0, $input_summary, $result->get_error_code(), $result->get_error_message() );
+
+		return $result;
+	}
+
+	$status = wordpress_mcp_admin_get_site_health_status();
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/run-site-health-fix', true, 'site-health', 0, $input_summary );
+
+	$result['summary_after']         = isset( $status['summary'] ) && is_array( $status['summary'] ) ? $status['summary'] : array();
+	$result['available_fixes_after'] = isset( $status['available_fixes'] ) && is_array( $status['available_fixes'] ) ? $status['available_fixes'] : array();
+
+	return $result;
 }
 
 /**

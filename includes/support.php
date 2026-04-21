@@ -870,3 +870,369 @@ function wordpress_mcp_admin_build_input_summary( array $input, array $keys ): s
 
 	return implode( '; ', $parts );
 }
+
+/**
+ * Site Health インスタンスを取得します。
+ *
+ * @return WP_Site_Health
+ */
+function wordpress_mcp_admin_get_site_health_instance(): WP_Site_Health {
+	require_once ABSPATH . 'wp-admin/includes/class-wp-site-health.php';
+
+	return WP_Site_Health::get_instance();
+}
+
+/**
+ * Site Health の HTML をプレーンテキストへ整形します。
+ *
+ * @param string $value 整形対象文字列。
+ * @return string
+ */
+function wordpress_mcp_admin_normalize_site_health_text( string $value ): string {
+	$text = html_entity_decode( wp_strip_all_tags( $value ), ENT_QUOTES, get_bloginfo( 'charset' ) );
+	$text = preg_replace( '/\s+/', ' ', $text );
+
+	return is_string( $text ) ? trim( $text ) : '';
+}
+
+/**
+ * Site Health REST テスト URL からルートを抽出します。
+ *
+ * @param string $test_url テスト URL。
+ * @return string
+ */
+function wordpress_mcp_admin_get_site_health_rest_route( string $test_url ): string {
+	$test_path = wp_parse_url( $test_url, PHP_URL_PATH );
+	$rest_path = wp_parse_url( rest_url(), PHP_URL_PATH );
+
+	if ( ! is_string( $test_path ) || ! is_string( $rest_path ) ) {
+		return '';
+	}
+
+	$rest_path = untrailingslashit( $rest_path );
+
+	if ( '' === $rest_path || ! str_starts_with( $test_path, $rest_path ) ) {
+		return '';
+	}
+
+	$route = substr( $test_path, strlen( $rest_path ) );
+
+	return '/' . ltrim( is_string( $route ) ? $route : '', '/' );
+}
+
+/**
+ * Site Health テストを実行して結果を返します。
+ *
+ * @param WP_Site_Health      $site_health Site Health インスタンス。
+ * @param string              $test_type テスト種別。
+ * @param array<string, mixed> $test テスト定義。
+ * @return array<string, mixed>|null
+ */
+function wordpress_mcp_admin_get_site_health_test_result( WP_Site_Health $site_health, string $test_type, array $test ): ?array {
+	$callback = null;
+
+	if ( 'direct' === $test_type ) {
+		if ( isset( $test['test'] ) && is_string( $test['test'] ) ) {
+			$method = sprintf( 'get_test_%s', $test['test'] );
+
+			if ( method_exists( $site_health, $method ) && is_callable( array( $site_health, $method ) ) ) {
+				$callback = array( $site_health, $method );
+			}
+		} elseif ( isset( $test['test'] ) && is_callable( $test['test'] ) ) {
+			$callback = $test['test'];
+		}
+	} elseif ( isset( $test['async_direct_test'] ) && is_callable( $test['async_direct_test'] ) ) {
+		$callback = $test['async_direct_test'];
+	}
+
+	if ( null !== $callback ) {
+		$result = apply_filters( 'site_status_test_result', call_user_func( $callback ) );
+
+		return is_array( $result ) ? $result : null;
+	}
+
+	if ( ! empty( $test['has_rest'] ) && isset( $test['test'] ) && is_string( $test['test'] ) ) {
+		$route = wordpress_mcp_admin_get_site_health_rest_route( $test['test'] );
+
+		if ( '' === $route ) {
+			return null;
+		}
+
+		$request = new WP_REST_Request( 'GET', $route );
+
+		if ( isset( $test['headers'] ) && is_array( $test['headers'] ) ) {
+			foreach ( $test['headers'] as $header_name => $header_value ) {
+				if ( is_string( $header_name ) && is_scalar( $header_value ) ) {
+					$request->set_header( $header_name, (string) $header_value );
+				}
+			}
+		}
+
+		$response = rest_do_request( $request );
+
+		if ( is_wp_error( $response ) ) {
+			return array(
+				'label'       => isset( $test['label'] ) && is_string( $test['label'] ) ? $test['label'] : __( 'Site Health test failed.', 'wordpress-mcp-admin-tools' ),
+				'status'      => 'critical',
+				'badge'       => array(
+					'label' => __( 'Site Health', 'wordpress-mcp-admin-tools' ),
+					'color' => 'red',
+				),
+				'description' => '<p>' . esc_html( $response->get_error_message() ) . '</p>',
+				'actions'     => '',
+				'test'        => isset( $test['label'] ) && is_string( $test['label'] ) ? sanitize_key( $test['label'] ) : 'site_health_test',
+			);
+		}
+
+		$data = $response->get_data();
+
+		return is_array( $data ) ? $data : null;
+	}
+
+	return null;
+}
+
+/**
+ * Site Health 修正定義を返します。
+ *
+ * @param string $fix 修正スラッグ。
+ * @return array<string, string>|null
+ */
+function wordpress_mcp_admin_get_site_health_fix_definition( string $fix ): ?array {
+	switch ( $fix ) {
+		case 'flush-permalinks':
+			return array(
+				'fix'         => 'flush-permalinks',
+				'label'       => __( 'Flush permalinks', 'wordpress-mcp-admin-tools' ),
+				'description' => __( 'Rebuild the permalink rewrite rules.', 'wordpress-mcp-admin-tools' ),
+			);
+
+		case 'enable-search-engine-indexing':
+			return array(
+				'fix'         => 'enable-search-engine-indexing',
+				'label'       => __( 'Enable search engine indexing', 'wordpress-mcp-admin-tools' ),
+				'description' => __( 'Allow search engines to index this site by updating the Reading setting.', 'wordpress-mcp-admin-tools' ),
+			);
+
+		case 'update-urls-to-https':
+			return array(
+				'fix'         => 'update-urls-to-https',
+				'label'       => __( 'Update site URLs to HTTPS', 'wordpress-mcp-admin-tools' ),
+				'description' => __( 'Switch the WordPress Address and Site Address options to HTTPS when supported.', 'wordpress-mcp-admin-tools' ),
+			);
+	}
+
+	return null;
+}
+
+/**
+ * Site Health テストに対して実行可能な修正一覧を返します。
+ *
+ * @param array<string, mixed> $test_result テスト結果。
+ * @return array<int, array<string, string>>
+ */
+function wordpress_mcp_admin_get_site_health_fixes_for_test( array $test_result ): array {
+	$test_name = isset( $test_result['test'] ) ? sanitize_key( (string) $test_result['test'] ) : '';
+	$status    = isset( $test_result['status'] ) ? sanitize_key( (string) $test_result['status'] ) : '';
+	$fixes     = array();
+
+	if ( 'authorization_header' === $test_name && 'recommended' === $status ) {
+		if ( ! function_exists( 'got_mod_rewrite' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+		}
+
+		if ( function_exists( 'got_mod_rewrite' ) && got_mod_rewrite() ) {
+			$fix = wordpress_mcp_admin_get_site_health_fix_definition( 'flush-permalinks' );
+
+			if ( null !== $fix ) {
+				$fixes[] = $fix;
+			}
+		}
+	}
+
+	if ( 'search_engine_visibility' === $test_name && 'recommended' === $status && ! get_option( 'blog_public' ) ) {
+		$fix = wordpress_mcp_admin_get_site_health_fix_definition( 'enable-search-engine-indexing' );
+
+		if ( null !== $fix ) {
+			$fixes[] = $fix;
+		}
+	}
+
+	if ( 'https_status' === $test_name && 'good' !== $status ) {
+		if ( ! function_exists( 'wp_is_https_supported' ) ) {
+			require_once ABSPATH . WPINC . '/https-detection.php';
+		}
+
+		if (
+			function_exists( 'wp_is_https_supported' )
+			&& wp_is_https_supported()
+			&& ! defined( 'WP_HOME' )
+			&& ! defined( 'WP_SITEURL' )
+			&& current_user_can( 'update_https' )
+		) {
+			$fix = wordpress_mcp_admin_get_site_health_fix_definition( 'update-urls-to-https' );
+
+			if ( null !== $fix ) {
+				$fixes[] = $fix;
+			}
+		}
+	}
+
+	return $fixes;
+}
+
+/**
+ * Site Health の状態を返します。
+ *
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_get_site_health_status(): array {
+	$site_health = wordpress_mcp_admin_get_site_health_instance();
+	$tests       = WP_Site_Health::get_tests();
+	$results     = array();
+	$counts      = array(
+		'good'        => 0,
+		'recommended' => 0,
+		'critical'    => 0,
+	);
+	$available_fixes = array();
+
+	foreach ( array( 'direct', 'async' ) as $test_type ) {
+		if ( empty( $tests[ $test_type ] ) || ! is_array( $tests[ $test_type ] ) ) {
+			continue;
+		}
+
+		foreach ( $tests[ $test_type ] as $test_id => $test ) {
+			if ( ! is_array( $test ) ) {
+				continue;
+			}
+
+			$result = wordpress_mcp_admin_get_site_health_test_result( $site_health, $test_type, $test );
+
+			if ( null === $result ) {
+				continue;
+			}
+
+			$status = isset( $result['status'] ) ? sanitize_key( (string) $result['status'] ) : '';
+
+			if ( isset( $counts[ $status ] ) ) {
+				++$counts[ $status ];
+			}
+
+			$fixes = wordpress_mcp_admin_get_site_health_fixes_for_test( $result );
+
+			foreach ( $fixes as $fix ) {
+				if ( isset( $fix['fix'] ) ) {
+					$available_fixes[ $fix['fix'] ] = $fix;
+				}
+			}
+
+			$results[] = array(
+				'id'          => is_string( $test_id ) ? $test_id : '',
+				'type'        => $test_type,
+				'test'        => isset( $result['test'] ) ? sanitize_key( (string) $result['test'] ) : ( is_string( $test_id ) ? $test_id : '' ),
+				'label'       => isset( $result['label'] ) ? wp_strip_all_tags( (string) $result['label'] ) : '',
+				'status'      => $status,
+				'badge'       => array(
+					'label' => isset( $result['badge']['label'] ) ? wp_strip_all_tags( (string) $result['badge']['label'] ) : '',
+					'color' => isset( $result['badge']['color'] ) ? sanitize_key( (string) $result['badge']['color'] ) : '',
+				),
+				'description' => wordpress_mcp_admin_normalize_site_health_text( isset( $result['description'] ) ? (string) $result['description'] : '' ),
+				'actions'     => wordpress_mcp_admin_normalize_site_health_text( isset( $result['actions'] ) ? (string) $result['actions'] : '' ),
+				'fixes'       => $fixes,
+			);
+		}
+	}
+
+	return array(
+		'summary'         => array(
+			'good'        => $counts['good'],
+			'recommended' => $counts['recommended'],
+			'critical'    => $counts['critical'],
+			'total'       => count( $results ),
+		),
+		'tests'           => $results,
+		'available_fixes' => array_values( $available_fixes ),
+	);
+}
+
+/**
+ * Site Health 修正を実行します。
+ *
+ * @param string $fix 修正スラッグ。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_apply_site_health_fix( string $fix ) {
+	$fix = sanitize_key( $fix );
+
+	switch ( $fix ) {
+		case 'flush-permalinks':
+			flush_rewrite_rules();
+
+			return array(
+				'fix'     => $fix,
+				'applied' => true,
+				'message' => __( 'Permalink rewrite rules were flushed.', 'wordpress-mcp-admin-tools' ),
+			);
+
+		case 'enable-search-engine-indexing':
+			update_option( 'blog_public', '1' );
+
+			return array(
+				'fix'               => $fix,
+				'applied'           => true,
+				'message'           => __( 'Search engine indexing is now enabled.', 'wordpress-mcp-admin-tools' ),
+				'search_visibility' => (bool) get_option( 'blog_public' ),
+			);
+
+		case 'update-urls-to-https':
+			if ( ! function_exists( 'wp_update_urls_to_https' ) ) {
+				require_once ABSPATH . WPINC . '/https-migration.php';
+			}
+
+			if ( ! function_exists( 'wp_is_https_supported' ) ) {
+				require_once ABSPATH . WPINC . '/https-detection.php';
+			}
+
+			if ( defined( 'WP_HOME' ) || defined( 'WP_SITEURL' ) ) {
+				return new WP_Error(
+					'wordpress_mcp_admin_https_constants_defined',
+					__( 'WP_HOME or WP_SITEURL is defined, so the URLs cannot be updated from the database.', 'wordpress-mcp-admin-tools' )
+				);
+			}
+
+			if ( ! current_user_can( 'update_https' ) ) {
+				return new WP_Error(
+					'wordpress_mcp_admin_cannot_update_https',
+					__( 'The current user is not allowed to update the site to HTTPS.', 'wordpress-mcp-admin-tools' )
+				);
+			}
+
+			if ( ! function_exists( 'wp_is_https_supported' ) || ! wp_is_https_supported() ) {
+				return new WP_Error(
+					'wordpress_mcp_admin_https_not_supported',
+					__( 'HTTPS is not supported for this site.', 'wordpress-mcp-admin-tools' )
+				);
+			}
+
+			if ( ! wp_update_urls_to_https() ) {
+				return new WP_Error(
+					'wordpress_mcp_admin_https_update_failed',
+					__( 'WordPress could not switch the site URLs to HTTPS.', 'wordpress-mcp-admin-tools' )
+				);
+			}
+
+			return array(
+				'fix'      => $fix,
+				'applied'  => true,
+				'message'  => __( 'WordPress Address and Site Address were updated to HTTPS.', 'wordpress-mcp-admin-tools' ),
+				'home_url' => home_url(),
+				'site_url' => site_url(),
+			);
+	}
+
+	return new WP_Error(
+		'wordpress_mcp_admin_unknown_site_health_fix',
+		__( 'The requested Site Health fix is not supported.', 'wordpress-mcp-admin-tools' )
+	);
+}

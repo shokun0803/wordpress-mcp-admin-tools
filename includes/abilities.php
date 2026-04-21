@@ -614,6 +614,149 @@ function wordpress_mcp_admin_register_abilities(): void {
 	);
 
 	wp_register_ability(
+		'wordpress-mcp-admin/get-site-health-status',
+		array(
+			'label'               => __( 'Get Site Health Status', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve the current WordPress Site Health test results and supported fixes.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_site_health_status',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'summary'         => array(
+						'type'       => 'object',
+						'properties' => array(
+							'good'        => array( 'type' => 'integer' ),
+							'recommended' => array( 'type' => 'integer' ),
+							'critical'    => array( 'type' => 'integer' ),
+							'total'       => array( 'type' => 'integer' ),
+						),
+					),
+					'tests'           => array(
+						'type'        => 'array',
+						'description' => __( 'Site Health test results.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'id'          => array( 'type' => 'string' ),
+								'type'        => array( 'type' => 'string' ),
+								'test'        => array( 'type' => 'string' ),
+								'label'       => array( 'type' => 'string' ),
+								'status'      => array( 'type' => 'string' ),
+								'description' => array( 'type' => 'string' ),
+								'actions'     => array( 'type' => 'string' ),
+								'fixes'       => array(
+									'type'  => 'array',
+									'items' => array(
+										'type'       => 'object',
+										'properties' => array(
+											'fix'         => array( 'type' => 'string' ),
+											'label'       => array( 'type' => 'string' ),
+											'description' => array( 'type' => 'string' ),
+										),
+									),
+								),
+							),
+						),
+					),
+					'available_fixes' => array(
+						'type'        => 'array',
+						'description' => __( 'Supported Site Health fixes that can be applied right now.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'fix'         => array( 'type' => 'string' ),
+								'label'       => array( 'type' => 'string' ),
+								'description' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/run-site-health-fix',
+		array(
+			'label'               => __( 'Run Site Health Fix', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Apply a supported fix for a current WordPress Site Health issue.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_run_site_health_fix',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'fix' => array(
+						'type'        => 'string',
+						'enum'        => array( 'flush-permalinks', 'enable-search-engine-indexing', 'update-urls-to-https' ),
+						'description' => __( 'Supported Site Health fix to apply.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'fix' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'fix'                  => array( 'type' => 'string' ),
+					'applied'              => array( 'type' => 'boolean' ),
+					'message'              => array( 'type' => 'string' ),
+					'home_url'             => array( 'type' => 'string' ),
+					'site_url'             => array( 'type' => 'string' ),
+					'search_visibility'    => array( 'type' => 'boolean' ),
+					'summary_after'        => array(
+						'type'       => 'object',
+						'properties' => array(
+							'good'        => array( 'type' => 'integer' ),
+							'recommended' => array( 'type' => 'integer' ),
+							'critical'    => array( 'type' => 'integer' ),
+							'total'       => array( 'type' => 'integer' ),
+						),
+					),
+					'available_fixes_after' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'fix'         => array( 'type' => 'string' ),
+								'label'       => array( 'type' => 'string' ),
+								'description' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
 		'wordpress-mcp-admin/update-general-settings',
 		array(
 			'label'               => __( 'Update General Settings', 'wordpress-mcp-admin-tools' ),
@@ -803,6 +946,52 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'readonly'   => false,
 					'destructive' => false,
 					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-theme-file',
+		array(
+			'label'               => __( 'Get Theme File', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Read an allowed file inside an installed theme.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_theme_file',
+			'permission_callback' => 'wordpress_mcp_admin_can_edit_themes',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'theme'         => array(
+						'type'        => 'string',
+						'description' => __( 'Theme stylesheet identifier to read.', 'wordpress-mcp-admin-tools' ),
+					),
+					'relative_path' => array(
+						'type'        => 'string',
+						'description' => __( 'Relative path inside the theme directory.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'theme', 'relative_path' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'theme'         => array( 'type' => 'string' ),
+					'relative_path' => array( 'type' => 'string' ),
+					'content'       => array( 'type' => 'string' ),
+					'bytes'         => array( 'type' => 'integer' ),
+					'edit_link'     => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
 				),
 			),
 		)
@@ -1097,6 +1286,52 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'readonly'   => false,
 					'destructive' => false,
 					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-plugin-file',
+		array(
+			'label'               => __( 'Get Plugin File', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Read an allowed file inside an installed plugin.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_plugin_file',
+			'permission_callback' => 'wordpress_mcp_admin_can_update_plugins',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'plugin'        => array(
+						'type'        => 'string',
+						'description' => __( 'Plugin slug or basename to read.', 'wordpress-mcp-admin-tools' ),
+					),
+					'relative_path' => array(
+						'type'        => 'string',
+						'description' => __( 'Relative path inside the plugin directory.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'plugin', 'relative_path' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'plugin'        => array( 'type' => 'string' ),
+					'relative_path' => array( 'type' => 'string' ),
+					'content'       => array( 'type' => 'string' ),
+					'bytes'         => array( 'type' => 'integer' ),
+					'edit_link'     => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
 				),
 			),
 		)

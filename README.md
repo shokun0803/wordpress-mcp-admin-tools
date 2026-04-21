@@ -2,7 +2,7 @@
 
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
-このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、一部の一般設定更新、実行監査ログの取得を MCP 経由で利用できます。
+このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、一部の一般設定更新、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
 
 ## 前提条件
 
@@ -20,14 +20,18 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - WordPress.org からのテーマ追加
 - 新規テーマ雛形の作成
 - インストール済みテーマファイルの編集
+- インストール済みテーマファイルの読取
 - インストール済みテーマ一覧の取得
 - インストール済みテーマの削除
 - WordPress.org からのプラグイン追加
 - 新規プラグイン雛形の作成
+- インストール済みプラグインファイルの読取
 - インストール済みプラグインファイルの更新
 - インストール済みプラグイン一覧の取得
 - インストール済みプラグインの削除
 - サイトタイトルとキャッチフレーズの更新
+- サイトヘルス状態の取得
+- サイトヘルスから実行可能な修正の一部実行
 - MCP 経由の実行監査ログ取得
 - WordPress 管理画面の Tools 配下での Activity Log 表示
 
@@ -47,11 +51,13 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/edit-page-design`
 - `wordpress-mcp-admin/install-theme`
 - `wordpress-mcp-admin/create-theme`
+- `wordpress-mcp-admin/get-theme-file`
 - `wordpress-mcp-admin/edit-theme`
 - `wordpress-mcp-admin/get-themes`
 - `wordpress-mcp-admin/delete-theme`
 - `wordpress-mcp-admin/install-plugin`
 - `wordpress-mcp-admin/create-plugin`
+- `wordpress-mcp-admin/get-plugin-file`
 - `wordpress-mcp-admin/update-plugin`
 - `wordpress-mcp-admin/get-plugins`
 - `wordpress-mcp-admin/delete-plugin`
@@ -59,6 +65,8 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/deactivate-plugin`
 - `wordpress-mcp-admin/enable-plugin-auto-update`
 - `wordpress-mcp-admin/disable-plugin-auto-update`
+- `wordpress-mcp-admin/get-site-health-status`
+- `wordpress-mcp-admin/run-site-health-fix`
 - `wordpress-mcp-admin/update-general-settings`
 - `wordpress-mcp-admin/get-audit-log`
 
@@ -102,6 +110,28 @@ cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-de
 EOF
 ```
 
+### サイトヘルス状態取得の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-site-health-status","parameters":{}}}}
+EOF
+```
+
+### サイトヘルス修正実行の例
+
+現在は以下の修正をサポートします。
+
+- `flush-permalinks`
+- `enable-search-engine-indexing`
+- `update-urls-to-https`
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/run-site-health-fix","parameters":{"fix":"flush-permalinks"}}}}
+EOF
+```
+
 ### テーマ追加の例
 
 ```bash
@@ -123,6 +153,14 @@ EOF
 ```bash
 cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/edit-theme","parameters":{"theme":"mcp-custom-theme","relative_path":"templates/index.html","content":"<!-- wp:paragraph --><p>Updated via MCP.</p><!-- /wp:paragraph -->","create_missing":true}}}}
+EOF
+```
+
+### テーマファイル読取の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-theme-file","parameters":{"theme":"twentytwentyfour","relative_path":"functions.php"}}}}
 EOF
 ```
 
@@ -216,6 +254,20 @@ cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-de
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-plugin","parameters":{"plugin":"mcp-custom-plugin","relative_path":"includes/bootstrap.php","content":"<?php\n\ndeclare( strict_types = 1 );\n\nadd_action( 'init', static function (): void {\n\t// Updated via MCP.\n} );\n","create_missing":true}}}}
 EOF
 ```
+
+### プラグインファイル読取の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-plugin-file","parameters":{"plugin":"classic-editor","relative_path":"classic-editor.php"}}}}
+EOF
+```
+
+### サイトヘルスのコード調査に関する考え方
+
+Site Health の一部の問題は、未使用テーマや未使用プラグインの削除のように直接修正できるだけでなく、アクティブな子テーマの functions.php やプラグインファイルの修正で改善できる場合があります。
+
+このため、`get-site-health-status` で問題を把握し、`get-themes` や `get-plugins` で対象候補を絞り込み、`get-theme-file` / `get-plugin-file` で既存コードを確認してから `edit-theme` / `update-plugin` で差分反映する流れを推奨します。
 
 ### プラグイン一覧取得の例
 
