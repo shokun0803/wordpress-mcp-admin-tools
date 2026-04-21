@@ -1,0 +1,251 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: wordpress-mcp-admin-tools 0.1.9\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-21 00:00+0000\n"
+"PO-Revision-Date: 2026-04-21 00:00+0000\n"
+"Last-Translator: GitHub Copilot\n"
+"Language: ja\n"
+"Language-Team: Japanese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Domain: wordpress-mcp-admin-tools\n"
+
+msgid "Administrative abilities available to MCP clients."
+msgstr "MCP クライアントから利用する管理用 Ability 群です。"
+
+msgid "Create a new page with the provided content."
+msgstr "指定された内容で固定ページを新規作成します。"
+
+msgid "Page title."
+msgstr "固定ページタイトルです。"
+
+msgid "Page content."
+msgstr "固定ページ本文です。"
+
+msgid "Page excerpt."
+msgstr "固定ページ抜粋です。"
+
+msgid "Page status."
+msgstr "固定ページステータスです。"
+
+msgid "Created page ID."
+msgstr "作成された固定ページ ID です。"
+
+msgid "Saved page status."
+msgstr "保存された固定ページステータスです。"
+
+msgid "Admin edit link."
+msgstr "管理画面の編集リンクです。"
+
+msgid "Create a new post with the provided content."
+msgstr "指定された内容で投稿を新規作成します。"
+
+msgid "Post title."
+msgstr "投稿タイトルです。"
+
+msgid "Post content."
+msgstr "投稿本文です。"
+
+msgid "Post excerpt."
+msgstr "投稿抜粋です。"
+
+msgid "Post status."
+msgstr "投稿ステータスです。"
+
+msgid "Post type. Defaults to post."
+msgstr "投稿タイプです。既定値は post です。"
+
+msgid "Created post ID."
+msgstr "作成された投稿 ID です。"
+
+msgid "Saved post status."
+msgstr "保存された投稿ステータスです。"
+
+msgid "Update the title, content, excerpt, or status of an existing post."
+msgstr "既存投稿のタイトル、本文、抜粋、ステータスを更新します。"
+
+msgid "Post ID to update."
+msgstr "更新対象の投稿 ID です。"
+
+msgid "New post title."
+msgstr "新しい投稿タイトルです。"
+
+msgid "New post content."
+msgstr "新しい投稿本文です。"
+
+msgid "New post excerpt."
+msgstr "新しい投稿抜粋です。"
+
+msgid "New post status."
+msgstr "新しい投稿ステータスです。"
+
+msgid "Updated post ID."
+msgstr "更新した投稿 ID です。"
+
+msgid "Updated post status."
+msgstr "更新後の投稿ステータスです。"
+
+msgid "Delete an existing post or move it to the trash."
+msgstr "既存投稿を削除またはゴミ箱へ移動します。"
+
+msgid "Post ID to delete."
+msgstr "削除対象の投稿 ID です。"
+
+msgid "Permanently delete when true."
+msgstr "true の場合は完全削除します。"
+
+msgid "Post ID that was deleted."
+msgstr "削除対象の投稿 ID です。"
+
+msgid "Whether the delete operation succeeded."
+msgstr "削除処理が成功したかどうかです。"
+
+msgid "Post status before deletion."
+msgstr "削除前の投稿ステータスです。"
+
+msgid "Update the title, content, excerpt, or status of an existing page."
+msgstr "既存の固定ページのタイトル、本文、抜粋、ステータスを更新します。"
+
+msgid "Page ID to update."
+msgstr "更新対象の固定ページ ID です。"
+
+msgid "New page title."
+msgstr "新しい固定ページタイトルです。"
+
+msgid "New page content."
+msgstr "新しい固定ページ本文です。"
+
+msgid "New page excerpt."
+msgstr "新しい固定ページ抜粋です。"
+
+msgid "New page status."
+msgstr "新しい固定ページステータスです。"
+
+msgid "Updated page ID."
+msgstr "更新した固定ページ ID です。"
+
+msgid "Updated page status."
+msgstr "更新後の固定ページステータスです。"
+
+msgid "Update the site title and tagline."
+msgstr "サイトタイトルとキャッチフレーズを更新します。"
+
+msgid "New site title."
+msgstr "新しいサイトタイトルです。"
+
+msgid "New tagline."
+msgstr "新しいキャッチフレーズです。"
+
+msgid "Updated site title."
+msgstr "更新後のサイトタイトルです。"
+
+msgid "Updated tagline."
+msgstr "更新後のキャッチフレーズです。"
+
+msgid "Retrieve the audit log for ability executions."
+msgstr "Ability 実行の監査ログを取得します。"
+
+msgid "Number of entries to retrieve. Must be between 1 and 50."
+msgstr "取得件数です。1 から 50 の範囲で指定します。"
+
+msgid "Array of audit log entries."
+msgstr "監査ログの配列です。"
+
+msgid "A title is required."
+msgstr "title は必須です。"
+
+msgid "The specified post type does not exist."
+msgstr "指定された投稿タイプが存在しません。"
+
+msgid "A valid post_id is required."
+msgstr "有効な post_id が必要です。"
+
+msgid "The specified post could not be found."
+msgstr "指定された投稿が見つかりません。"
+
+msgid "Failed to delete the post."
+msgstr "投稿の削除に失敗しました。"
+
+msgid "A valid page_id is required."
+msgstr "有効な page_id が必要です。"
+
+msgid "The specified page could not be found."
+msgstr "指定された固定ページが見つかりません。"
+
+msgid "No settings values were provided for update."
+msgstr "更新する設定値が指定されていません。"
+
+msgid "You do not have permission to view this page."
+msgstr "この画面を表示する権限がありません。"
+
+msgid "Displays a history of operations executed through MCP clients. Up to 50 recent entries are kept."
+msgstr "MCP クライアント経由で実行された操作履歴を表示します。最新 50 件まで保持します。"
+
+msgid "Use this page to review what this plugin can do through MCP and to inspect the recent activity log in one place."
+msgstr "このページでは、このプラグインが MCP 経由で実行できる内容と最近のアクティビティログを 1 か所で確認できます。"
+
+msgid "What You Can Do"
+msgstr "できること"
+
+msgid "The plugin publishes the following administrative actions to MCP clients."
+msgstr "このプラグインは、以下の管理操作を MCP クライアントに公開します。"
+
+msgid "Create posts and pages."
+msgstr "投稿と固定ページを作成できます。"
+
+msgid "Update existing posts and pages."
+msgstr "既存の投稿と固定ページを更新できます。"
+
+msgid "Delete posts or move them to the trash."
+msgstr "投稿を削除するかゴミ箱へ移動できます。"
+
+msgid "Review the audit log of MCP-triggered actions."
+msgstr "MCP 経由で実行された操作の監査ログを確認できます。"
+
+msgid "Published Abilities"
+msgstr "公開中の Ability"
+
+msgid "These abilities are exposed under the wordpress-mcp-admin/* namespace."
+msgstr "これらの Ability は wordpress-mcp-admin/* 名前空間で公開されています。"
+
+msgid "Purpose"
+msgstr "用途"
+
+msgid "Required Capability"
+msgstr "必要権限"
+
+msgid "Activity Log"
+msgstr "アクティビティログ"
+
+msgid "No audit log entries yet."
+msgstr "監査ログはまだありません。"
+
+msgid "MCP Admin Tools"
+msgstr "MCP Admin Tools"
+
+msgid "Success"
+msgstr "成功"
+
+msgid "Failed"
+msgstr "失敗"
+
+msgid "Timestamp"
+msgstr "日時"
+
+msgid "Ability"
+msgstr "Ability"
+
+msgid "Result"
+msgstr "結果"
+
+msgid "Target"
+msgstr "対象"
+
+msgid "Input Summary"
+msgstr "入力要約"
+
+msgid "Error"
+msgstr "エラー"
