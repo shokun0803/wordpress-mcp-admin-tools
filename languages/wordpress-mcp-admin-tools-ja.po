@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: wordpress-mcp-admin-tools 0.1.9\n"
+"Project-Id-Version: wordpress-mcp-admin-tools 0.4.6\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-21 00:00+0000\n"
 "PO-Revision-Date: 2026-04-21 00:00+0000\n"
@@ -127,6 +127,105 @@ msgstr "新しい固定ページステータスです。"
 msgid "Updated page ID."
 msgstr "更新した固定ページ ID です。"
 
+msgid "Edit Page Blocks"
+msgstr "固定ページブロック編集"
+
+msgid "Get Page Blocks"
+msgstr "固定ページブロック取得"
+
+msgid "Edit Post Blocks"
+msgstr "投稿ブロック編集"
+
+msgid "Get Post Blocks"
+msgstr "投稿ブロック取得"
+
+msgid "Replace the block content of an existing page while keeping it editable in the block editor."
+msgstr "既存の固定ページ本文を block content で置き換えつつ、ブロックエディタで再編集できる状態を保ちます。"
+
+msgid "Retrieve the current block content of an existing page."
+msgstr "既存の固定ページ本文にある現在の block content を取得します。"
+
+msgid "Replace the block content of an existing post or custom post type entry while keeping it editable in the block editor."
+msgstr "既存の投稿やカスタム投稿タイプ本文を block content で置き換えつつ、ブロックエディタで再編集できる状態を保ちます。"
+
+msgid "Retrieve the current block content of an existing post or custom post type entry."
+msgstr "既存の投稿やカスタム投稿タイプ本文にある現在の block content を取得します。"
+
+msgid "Page ID whose block content should be replaced."
+msgstr "block content を置き換える固定ページ ID です。"
+
+msgid "Page ID whose current block content should be retrieved."
+msgstr "現在の block content を取得する固定ページ ID です。"
+
+msgid "Post ID whose block content should be replaced."
+msgstr "block content を置き換える投稿 ID です。"
+
+msgid "Post ID whose current block content should be retrieved."
+msgstr "現在の block content を取得する投稿 ID です。"
+
+msgid "Full block markup to save into the page content."
+msgstr "固定ページ本文へ保存する block markup 全文です。"
+
+msgid "Full block markup to save into the post content."
+msgstr "投稿本文へ保存する block markup 全文です。"
+
+msgid "Requested page ID."
+msgstr "取得対象の固定ページ ID です。"
+
+msgid "Requested post ID."
+msgstr "取得対象の投稿 ID です。"
+
+msgid "Current page title."
+msgstr "現在の固定ページタイトルです。"
+
+msgid "Current post title."
+msgstr "現在の投稿タイトルです。"
+
+msgid "Current page status."
+msgstr "現在の固定ページステータスです。"
+
+msgid "Current post status."
+msgstr "現在の投稿ステータスです。"
+
+msgid "Current post type."
+msgstr "現在の投稿タイプです。"
+
+msgid "Current page block markup."
+msgstr "現在の固定ページ block markup です。"
+
+msgid "Current post block markup."
+msgstr "現在の投稿 block markup です。"
+
+msgid "Parsed block structure of the current page content."
+msgstr "現在の固定ページ本文を parse_blocks した構造です。"
+
+msgid "Parsed block structure of the current post content."
+msgstr "現在の投稿本文を parse_blocks した構造です。"
+
+msgid "Edit Page Design"
+msgstr "固定ページデザイン編集"
+
+msgid "Create or replace a page-specific block template in the active block theme."
+msgstr "有効な block theme 内で、固定ページ専用の block template を作成または置換します。"
+
+msgid "Page ID whose design should be changed."
+msgstr "デザインを変更する固定ページ ID です。"
+
+msgid "Full block template content to save for the page-specific design."
+msgstr "固定ページ専用デザインとして保存する block template 全文です。"
+
+msgid "Page ID whose design was updated."
+msgstr "デザインを更新した固定ページ ID です。"
+
+msgid "Active theme stylesheet identifier."
+msgstr "現在有効なテーマの stylesheet 識別子です。"
+
+msgid "Relative path of the saved page template file."
+msgstr "保存した固定ページ template ファイルの相対パスです。"
+
+msgid "Number of bytes written to the page template file."
+msgstr "固定ページ template ファイルへ書き込んだバイト数です。"
+
 msgid "Updated page status."
 msgstr "更新後の固定ページステータスです。"
 
@@ -169,11 +268,29 @@ msgstr "指定された投稿が見つかりません。"
 msgid "Failed to delete the post."
 msgstr "投稿の削除に失敗しました。"
 
+msgid "Page design content cannot be empty."
+msgstr "固定ページデザインの内容は空にできません。"
+
 msgid "A valid page_id is required."
 msgstr "有効な page_id が必要です。"
 
 msgid "The specified page could not be found."
 msgstr "指定された固定ページが見つかりません。"
+
+msgid "Block content is required."
+msgstr "block content は必須です。"
+
+msgid "The active theme could not be loaded."
+msgstr "現在有効なテーマを読み込めませんでした。"
+
+msgid "The active theme must be a block theme to edit page design files."
+msgstr "固定ページデザインファイルを編集するには、現在有効なテーマが block theme である必要があります。"
+
+msgid "Failed to create the target directory for the page design file."
+msgstr "固定ページデザインファイルの保存先ディレクトリを作成できませんでした。"
+
+msgid "Failed to write the page design template file."
+msgstr "固定ページデザイン用 template ファイルの書き込みに失敗しました。"
 
 msgid "No settings values were provided for update."
 msgstr "更新する設定値が指定されていません。"
@@ -198,6 +315,12 @@ msgstr "投稿と固定ページを作成できます。"
 
 msgid "Update existing posts and pages."
 msgstr "既存の投稿と固定ページを更新できます。"
+
+msgid "Read and replace page, post, and custom post type block layouts while keeping them editable in the block editor."
+msgstr "固定ページ、投稿、カスタム投稿タイプをブロックエディタで再編集できる状態のまま、block レイアウトの取得と置き換えができます。"
+
+msgid "Change page-specific designs by editing files in the active block theme."
+msgstr "有効な block theme 内のファイル編集で、固定ページごとのデザインを変更できます。"
 
 msgid "Delete posts or move them to the trash."
 msgstr "投稿を削除するかゴミ箱へ移動できます。"
@@ -249,3 +372,456 @@ msgstr "入力要約"
 
 msgid "Error"
 msgstr "エラー"
+
+msgid "A plugin name is required."
+msgstr "プラグイン名は必須です。"
+
+msgid "A plugin with that slug already exists."
+msgstr "そのスラッグのプラグインは既に存在します。"
+
+msgid "A valid plugin identifier is required."
+msgstr "有効なプラグイン識別子が必要です。"
+
+msgid "A valid plugin slug is required."
+msgstr "有効なプラグインスラッグが必要です。"
+
+msgid "A valid relative_path inside the plugin directory is required."
+msgstr "プラグインディレクトリ内の有効な relative_path が必要です。"
+
+msgid "A valid relative_path inside the theme directory is required."
+msgstr "テーマディレクトリ内の有効な relative_path が必要です。"
+
+msgid "A valid theme slug is required."
+msgstr "有効なテーマスラッグが必要です。"
+
+msgid "A valid theme stylesheet is required."
+msgstr "有効なテーマ stylesheet が必要です。"
+
+msgid "A theme name is required."
+msgstr "テーマ名は必須です。"
+
+msgid "A theme with that slug already exists."
+msgstr "そのスラッグのテーマは既に存在します。"
+
+msgid "Activate the plugin after creation when true."
+msgstr "true の場合、作成後にプラグインを有効化します。"
+
+msgid "Activate the plugin after installation when true."
+msgstr "true の場合、追加後にプラグインを有効化します。"
+
+msgid "Activate the theme after creation when true."
+msgstr "true の場合、作成後にテーマを有効化します。"
+
+msgid "Activate the theme after installation when true."
+msgstr "true の場合、追加後にテーマを有効化します。"
+
+msgid "Activate Plugin"
+msgstr "プラグイン有効化"
+
+msgid "Activate an installed plugin."
+msgstr "インストール済みプラグインを有効化します。"
+
+msgid "Enable Plugin Auto-Update"
+msgstr "プラグイン自動更新を有効化"
+
+msgid "Enable auto-updates for an installed plugin."
+msgstr "インストール済みプラグインの自動更新を有効化します。"
+
+msgid "Admin plugin editor link when available."
+msgstr "利用可能な場合の管理画面プラグインエディターリンクです。"
+
+msgid "Admin theme editor link when available."
+msgstr "利用可能な場合の管理画面テーマエディターリンクです。"
+
+msgid "Create Page"
+msgstr "固定ページ作成"
+
+msgid "Create Plugin"
+msgstr "プラグイン作成"
+
+msgid "Create Post"
+msgstr "投稿作成"
+
+msgid "Create Theme"
+msgstr "テーマ作成"
+
+msgid "Create a new classic or block theme scaffold and optionally activate it."
+msgstr "新しいクラシックテーマまたはブロックテーマの雛形を作成し、必要に応じて有効化します。"
+
+msgid "Create a new plugin scaffold and optionally activate it."
+msgstr "新しいプラグイン雛形を作成し、必要に応じて有効化します。"
+
+msgid "Create the file when it does not already exist."
+msgstr "ファイルが存在しない場合に新規作成します。"
+
+msgid "Created plugin basename."
+msgstr "作成されたプラグイン basename です。"
+
+msgid "Created plugin display name."
+msgstr "作成されたプラグイン表示名です。"
+
+msgid "Created theme display name."
+msgstr "作成されたテーマ表示名です。"
+
+msgid "Created theme scaffold type."
+msgstr "作成されたテーマ雛形タイプです。"
+
+msgid "Created theme stylesheet identifier."
+msgstr "作成されたテーマ stylesheet 識別子です。"
+
+msgid "Created via MCP."
+msgstr "MCP 経由で作成しました。"
+
+msgid "Delete Plugin"
+msgstr "プラグイン削除"
+
+msgid "Delete Post"
+msgstr "投稿削除"
+
+msgid "Delete Theme"
+msgstr "テーマ削除"
+
+msgid "Deactivate Plugin"
+msgstr "プラグイン無効化"
+
+msgid "Deactivate an installed plugin."
+msgstr "インストール済みプラグインを無効化します。"
+
+msgid "Disable Plugin Auto-Update"
+msgstr "プラグイン自動更新を無効化"
+
+msgid "Disable auto-updates for an installed plugin."
+msgstr "インストール済みプラグインの自動更新を無効化します。"
+
+msgid "Delete an installed inactive plugin."
+msgstr "インストール済みの無効なプラグインを削除します。"
+
+msgid "Delete an installed inactive theme."
+msgstr "インストール済みの無効なテーマを削除します。"
+
+msgid "Deleted plugin basename."
+msgstr "削除されたプラグイン basename です。"
+
+msgid "Deactivated plugin basename."
+msgstr "無効化したプラグイン basename です。"
+
+msgid "Plugin basename with auto-updates enabled."
+msgstr "自動更新を有効化したプラグイン basename です。"
+
+msgid "Plugin basename with auto-updates disabled."
+msgstr "自動更新を無効化したプラグイン basename です。"
+
+msgid "Deleted theme stylesheet identifier."
+msgstr "削除されたテーマ stylesheet 識別子です。"
+
+msgid "Directory slug for the new plugin."
+msgstr "新しいプラグインのディレクトリスラッグです。"
+
+msgid "Directory slug for the new theme."
+msgstr "新しいテーマのディレクトリスラッグです。"
+
+msgid "Display name of the new plugin."
+msgstr "新しいプラグインの表示名です。"
+
+msgid "Display name of the new theme."
+msgstr "新しいテーマの表示名です。"
+
+msgid "Edit Theme"
+msgstr "テーマ編集"
+
+msgid "Edited theme stylesheet identifier."
+msgstr "編集したテーマ stylesheet 識別子です。"
+
+msgid "Failed to create a directory for the plugin scaffold."
+msgstr "プラグイン雛形用のディレクトリ作成に失敗しました。"
+
+msgid "Failed to create a directory for the theme scaffold."
+msgstr "テーマ雛形用のディレクトリ作成に失敗しました。"
+
+msgid "Failed to create the plugin directory."
+msgstr "プラグインディレクトリの作成に失敗しました。"
+
+msgid "Failed to create the target directory inside the plugin."
+msgstr "プラグイン内の対象ディレクトリ作成に失敗しました。"
+
+msgid "Failed to create the target directory inside the theme."
+msgstr "テーマ内の対象ディレクトリ作成に失敗しました。"
+
+msgid "Failed to create the theme directory."
+msgstr "テーマディレクトリの作成に失敗しました。"
+
+msgid "Failed to delete the plugin."
+msgstr "プラグインの削除に失敗しました。"
+
+msgid "Failed to delete the theme."
+msgstr "テーマの削除に失敗しました。"
+
+msgid "Failed to install the plugin."
+msgstr "プラグインの追加に失敗しました。"
+
+msgid "Failed to install the theme."
+msgstr "テーマの追加に失敗しました。"
+
+msgid "Failed to write a file in the plugin scaffold."
+msgstr "プラグイン雛形内のファイル書き込みに失敗しました。"
+
+msgid "Failed to write a file in the theme scaffold."
+msgstr "テーマ雛形内のファイル書き込みに失敗しました。"
+
+msgid "Failed to write the plugin file."
+msgstr "プラグインファイルの書き込みに失敗しました。"
+
+msgid "Failed to write the theme file."
+msgstr "テーマファイルの書き込みに失敗しました。"
+
+msgid "Full replacement file content."
+msgstr "ファイル全体を置き換える内容です。"
+
+msgid "Get Audit Log"
+msgstr "監査ログ取得"
+
+msgid "Get Plugins"
+msgstr "プラグイン一覧取得"
+
+msgid "Get Themes"
+msgstr "テーマ一覧取得"
+
+msgid "Install Plugin"
+msgstr "プラグイン追加"
+
+msgid "Install Theme"
+msgstr "テーマ追加"
+
+msgid "Install a plugin from WordPress.org and optionally activate it."
+msgstr "WordPress.org からプラグインを追加し、必要に応じて有効化します。"
+
+msgid "Install a theme from WordPress.org and optionally activate it."
+msgstr "WordPress.org からテーマを追加し、必要に応じて有効化します。"
+
+msgid "Install, create, edit, list, and delete themes."
+msgstr "テーマの追加、作成、編集、一覧取得、削除ができます。"
+
+msgid "Install, create, update, list, and delete plugins."
+msgstr "プラグインの追加、作成、更新、一覧取得、削除ができます。"
+
+msgid "Install, create, update, activate, deactivate, list, and delete plugins."
+msgstr "プラグインの追加、作成、更新、有効化、無効化、一覧取得、削除ができます。"
+
+msgid "Installed plugin basename."
+msgstr "追加されたプラグイン basename です。"
+
+msgid "Installed plugin display name."
+msgstr "追加されたプラグイン表示名です。"
+
+msgid "Installed plugin version."
+msgstr "追加されたプラグインバージョンです。"
+
+msgid "Installed plugins."
+msgstr "インストール済みプラグインです。"
+
+msgid "Installed theme display name."
+msgstr "追加されたテーマ表示名です。"
+
+msgid "Installed theme stylesheet identifier."
+msgstr "追加されたテーマ stylesheet 識別子です。"
+
+msgid "Installed theme version."
+msgstr "追加されたテーマバージョンです。"
+
+msgid "Installed themes."
+msgstr "インストール済みテーマです。"
+
+msgid "Number of bytes written to the file."
+msgstr "ファイルに書き込んだバイト数です。"
+
+msgid "Only css, php, json, html, and txt files can be edited."
+msgstr "css、php、json、html、txt ファイルのみ編集できます。"
+
+msgid "Only php, js, ts, jsx, tsx, css, json, html, svg, md, and txt files can be edited."
+msgstr "php、js、ts、jsx、tsx、css、json、html、svg、md、txt ファイルのみ編集できます。"
+
+msgid "Only plugins stored in their own directory can be updated with relative_path."
+msgstr "relative_path で更新できるのは専用ディレクトリを持つプラグインのみです。"
+
+msgid "Optional parent theme stylesheet for child themes."
+msgstr "子テーマ用の親テーマ stylesheet を任意で指定できます。"
+
+msgid "Plugin author URL."
+msgstr "プラグイン作者 URL です。"
+
+msgid "Plugin author name."
+msgstr "プラグイン作者名です。"
+
+msgid "Plugin description."
+msgstr "プラグイン説明です。"
+
+msgid "Plugin homepage URL."
+msgstr "プラグインホームページ URL です。"
+
+msgid "Plugin slug or basename to delete."
+msgstr "削除対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin slug or basename to activate."
+msgstr "有効化対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin slug or basename to deactivate."
+msgstr "無効化対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin slug or basename to enable auto-updates for."
+msgstr "自動更新を有効化する対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin slug or basename to disable auto-updates for."
+msgstr "自動更新を無効化する対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin slug or basename to update."
+msgstr "更新対象のプラグインスラッグまたは basename です。"
+
+msgid "Plugin version string. Defaults to 1.0.0."
+msgstr "プラグインのバージョン文字列です。既定値は 1.0.0 です。"
+
+msgid "Relative path inside the plugin directory."
+msgstr "プラグインディレクトリ内の相対パスです。"
+
+msgid "Relative path inside the theme directory."
+msgstr "テーマディレクトリ内の相対パスです。"
+
+msgid "Retrieve installed plugins and their activation state."
+msgstr "インストール済みプラグインと有効状態を取得します。"
+
+msgid "Retrieve installed themes and their activation state."
+msgstr "インストール済みテーマと有効状態を取得します。"
+
+msgid "Return inactive plugins as well. Defaults to true."
+msgstr "無効なプラグインも返します。既定値は true です。"
+
+msgid "Return inactive themes as well. Defaults to true."
+msgstr "無効なテーマも返します。既定値は true です。"
+
+msgid "The active plugin cannot be deleted."
+msgstr "有効なプラグインは削除できません。"
+
+msgid "The active theme cannot be deleted."
+msgstr "有効なテーマは削除できません。"
+
+msgid "The plugin was created but could not be loaded afterwards."
+msgstr "プラグインは作成されましたが、その後読み込めませんでした。"
+
+msgid "The plugin was installed but could not be loaded afterwards."
+msgstr "プラグインは追加されましたが、その後読み込めませんでした。"
+
+msgid "The specified plugin could not be found."
+msgstr "指定されたプラグインが見つかりません。"
+
+msgid "The specified plugin file does not exist. Set create_missing to true to create it."
+msgstr "指定されたプラグインファイルが存在しません。作成するには create_missing を true にしてください。"
+
+msgid "The specified theme could not be found."
+msgstr "指定されたテーマが見つかりません。"
+
+msgid "The specified theme file does not exist. Set create_missing to true to create it."
+msgstr "指定されたテーマファイルが存在しません。作成するには create_missing を true にしてください。"
+
+msgid "The theme was created but could not be loaded afterwards."
+msgstr "テーマは作成されましたが、その後読み込めませんでした。"
+
+msgid "The theme was installed but could not be loaded afterwards."
+msgstr "テーマは追加されましたが、その後読み込めませんでした。"
+
+msgid "Theme author URL."
+msgstr "テーマ作者 URL です。"
+
+msgid "Theme author name."
+msgstr "テーマ作者名です。"
+
+msgid "Theme description."
+msgstr "テーマ説明です。"
+
+msgid "Theme homepage URL."
+msgstr "テーマホームページ URL です。"
+
+msgid "Theme scaffold type."
+msgstr "テーマ雛形タイプです。"
+
+msgid "Theme stylesheet identifier to delete."
+msgstr "削除対象のテーマ stylesheet 識別子です。"
+
+msgid "Theme stylesheet identifier to edit."
+msgstr "編集対象のテーマ stylesheet 識別子です。"
+
+msgid "Theme version string. Defaults to 1.0.0."
+msgstr "テーマのバージョン文字列です。既定値は 1.0.0 です。"
+
+msgid "Update General Settings"
+msgstr "一般設定更新"
+
+msgid "Update Page"
+msgstr "固定ページ更新"
+
+msgid "Update Plugin"
+msgstr "プラグイン更新"
+
+msgid "Update Post"
+msgstr "投稿更新"
+
+msgid "Update or create an allowed file inside an installed plugin."
+msgstr "インストール済みプラグイン内の許可されたファイルを更新または作成します。"
+
+msgid "Update or create an allowed file inside an installed theme."
+msgstr "インストール済みテーマ内の許可されたファイルを更新または作成します。"
+
+msgid "Updated plugin basename."
+msgstr "更新したプラグイン basename です。"
+
+msgid "Activated plugin basename."
+msgstr "有効化したプラグイン basename です。"
+
+msgid "Updated relative file path."
+msgstr "更新した相対ファイルパスです。"
+
+msgid "Whether the created plugin is now active."
+msgstr "作成したプラグインが現在有効かどうかです。"
+
+msgid "Whether the plugin is active after the operation."
+msgstr "操作後にプラグインが有効かどうかです。"
+
+msgid "Whether the created theme is now active."
+msgstr "作成したテーマが現在有効かどうかです。"
+
+msgid "Whether the plugin is now active."
+msgstr "プラグインが現在有効かどうかです。"
+
+msgid "Whether the plugin was deleted."
+msgstr "プラグインが削除されたかどうかです。"
+
+msgid "Whether the plugin is inactive after the operation."
+msgstr "操作後にプラグインが無効かどうかです。"
+
+msgid "Whether plugin auto-updates are enabled after the operation."
+msgstr "操作後にプラグイン自動更新が有効かどうかです。"
+
+msgid "Whether plugin auto-updates remain enabled after the operation."
+msgstr "操作後もプラグイン自動更新が有効なままかどうかです。"
+
+msgid "Whether the theme is now active."
+msgstr "テーマが現在有効かどうかです。"
+
+msgid "Whether the theme was deleted."
+msgstr "テーマが削除されたかどうかです。"
+
+msgid "WordPress.org plugin slug to install."
+msgstr "追加対象の WordPress.org プラグインスラッグです。"
+
+msgid "WordPress.org theme slug to install."
+msgstr "追加対象の WordPress.org テーマスラッグです。"
+
+msgid "This plugin cannot deactivate itself."
+msgstr "このプラグイン自身は無効化できません。"
+
+msgid "Failed to deactivate the plugin."
+msgstr "プラグインの無効化に失敗しました。"
+
+msgid "Failed to enable plugin auto-updates."
+msgstr "プラグイン自動更新の有効化に失敗しました。"
+
+msgid "Failed to disable plugin auto-updates."
+msgstr "プラグイン自動更新の無効化に失敗しました。"
