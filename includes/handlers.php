@@ -1132,6 +1132,101 @@ function wordpress_mcp_admin_execute_update_object_meta( array $input = array() 
 }
 
 /**
+ * コンタクトフォーム一覧を取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_list_contact_forms( array $input = array() ) {
+	$provider      = wordpress_mcp_admin_normalize_contact_form_provider( $input['provider'] ?? '' );
+	$per_page      = isset( $input['per_page'] ) ? max( 1, min( 50, (int) $input['per_page'] ) ) : 20;
+	$search        = isset( $input['search'] ) ? sanitize_text_field( wp_unslash( (string) $input['search'] ) ) : '';
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'provider', 'search', 'per_page' ) );
+
+	if ( is_wp_error( $provider ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/list-contact-forms', false, 'contact_form', 0, $input_summary, $provider->get_error_code(), $provider->get_error_message() );
+
+		return $provider;
+	}
+
+	$records = wordpress_mcp_admin_get_contact_form_records( $provider, $per_page, $search );
+
+	if ( is_wp_error( $records ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/list-contact-forms', false, 'contact_form', 0, $input_summary, $records->get_error_code(), $records->get_error_message() );
+
+		return $records;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/list-contact-forms', true, 'contact_form', 0, $input_summary );
+
+	return array(
+		'provider' => $provider,
+		'items'    => $records,
+	);
+}
+
+/**
+ * コンタクトフォームを取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_get_contact_form( array $input = array() ) {
+	$provider      = wordpress_mcp_admin_normalize_contact_form_provider( $input['provider'] ?? '' );
+	$form_id       = isset( $input['form_id'] ) ? (int) $input['form_id'] : 0;
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'provider', 'form_id' ) );
+
+	if ( is_wp_error( $provider ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-contact-form', false, 'contact_form', 0, $input_summary, $provider->get_error_code(), $provider->get_error_message() );
+
+		return $provider;
+	}
+
+	$record = wordpress_mcp_admin_get_contact_form_record( $provider, $form_id );
+
+	if ( is_wp_error( $record ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-contact-form', false, 'contact_form', $form_id, $input_summary, $record->get_error_code(), $record->get_error_message() );
+
+		return $record;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-contact-form', true, 'contact_form', $form_id, $input_summary );
+
+	return $record;
+}
+
+/**
+ * コンタクトフォームを作成または更新します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_save_contact_form( array $input = array() ) {
+	$provider      = wordpress_mcp_admin_normalize_contact_form_provider( $input['provider'] ?? '' );
+	$form_id       = isset( $input['form_id'] ) ? (int) $input['form_id'] : 0;
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'provider', 'form_id', 'title', 'status' ) );
+
+	if ( is_wp_error( $provider ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/save-contact-form', false, 'contact_form', 0, $input_summary, $provider->get_error_code(), $provider->get_error_message() );
+
+		return $provider;
+	}
+
+	$record = wordpress_mcp_admin_save_contact_form_record( $provider, $input );
+
+	if ( is_wp_error( $record ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/save-contact-form', false, 'contact_form', $form_id, $input_summary, $record->get_error_code(), $record->get_error_message() );
+
+		return $record;
+	}
+
+	$target_form_id = isset( $record['form_id'] ) ? (int) $record['form_id'] : $form_id;
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/save-contact-form', true, 'contact_form', $target_form_id, $input_summary );
+
+	return $record;
+}
+
+/**
  * テーマをインストールします。
  *
  * @param array<string, mixed> $input 入力値。
@@ -1750,13 +1845,16 @@ function wordpress_mcp_admin_execute_install_plugin( array $input = array() ) {
 		}
 	}
 
+	$translation_sync = wordpress_mcp_admin_sync_plugin_translation_updates( $plugin_basename );
+
 	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/install-plugin', true, 'plugin', 0, $input_summary );
 
 	return array(
-		'plugin'    => $plugin_basename,
-		'name'      => isset( $all_plugins[ $plugin_basename ]['Name'] ) ? (string) $all_plugins[ $plugin_basename ]['Name'] : '',
-		'version'   => isset( $all_plugins[ $plugin_basename ]['Version'] ) ? (string) $all_plugins[ $plugin_basename ]['Version'] : '',
-		'activated' => is_plugin_active( $plugin_basename ),
+		'plugin'           => $plugin_basename,
+		'name'             => isset( $all_plugins[ $plugin_basename ]['Name'] ) ? (string) $all_plugins[ $plugin_basename ]['Name'] : '',
+		'version'          => isset( $all_plugins[ $plugin_basename ]['Version'] ) ? (string) $all_plugins[ $plugin_basename ]['Version'] : '',
+		'activated'        => is_plugin_active( $plugin_basename ),
+		'translation_sync' => $translation_sync,
 	);
 }
 
@@ -2221,11 +2319,14 @@ function wordpress_mcp_admin_execute_activate_plugin( array $input = array() ) {
 	}
 
 	if ( is_plugin_active( $plugin['plugin'] ) ) {
+		$translation_sync = wordpress_mcp_admin_sync_plugin_translation_updates( $plugin['plugin'] );
+
 		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/activate-plugin', true, 'plugin', 0, $input_summary );
 
 		return array(
-			'plugin'    => $plugin['plugin'],
-			'activated' => true,
+			'plugin'           => $plugin['plugin'],
+			'activated'        => true,
+			'translation_sync' => $translation_sync,
 		);
 	}
 
@@ -2237,11 +2338,14 @@ function wordpress_mcp_admin_execute_activate_plugin( array $input = array() ) {
 		return $activation_result;
 	}
 
+	$translation_sync = wordpress_mcp_admin_sync_plugin_translation_updates( $plugin['plugin'] );
+
 	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/activate-plugin', true, 'plugin', 0, $input_summary );
 
 	return array(
-		'plugin'    => $plugin['plugin'],
-		'activated' => is_plugin_active( $plugin['plugin'] ),
+		'plugin'           => $plugin['plugin'],
+		'activated'        => is_plugin_active( $plugin['plugin'] ),
+		'translation_sync' => $translation_sync,
 	);
 }
 

@@ -1460,6 +1460,184 @@ function wordpress_mcp_admin_register_abilities(): void {
 	);
 
 	wp_register_ability(
+		'wordpress-mcp-admin/list-contact-forms',
+		array(
+			'label'               => __( 'List Contact Forms', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve forms managed by Contact Form 7 or WPForms Lite.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_list_contact_forms',
+			'permission_callback' => 'wordpress_mcp_admin_can_view_contact_forms',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider' => array(
+						'type'        => 'string',
+						'enum'        => array( 'contact-form-7', 'wpforms-lite' ),
+						'description' => __( 'Target form provider.', 'wordpress-mcp-admin-tools' ),
+					),
+					'search'   => array(
+						'type'        => 'string',
+						'description' => __( 'Optional title search term.', 'wordpress-mcp-admin-tools' ),
+					),
+					'per_page' => array(
+						'type'        => 'integer',
+						'description' => __( 'Number of forms to return. Between 1 and 50.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'provider' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider' => array( 'type' => 'string' ),
+					'items'    => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'provider'  => array( 'type' => 'string' ),
+								'form_id'   => array( 'type' => 'integer' ),
+								'title'     => array( 'type' => 'string' ),
+								'status'    => array( 'type' => 'string' ),
+								'edit_link' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-contact-form',
+		array(
+			'label'               => __( 'Get Contact Form', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve a single Contact Form 7 or WPForms Lite form with its provider-specific configuration.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_contact_form',
+			'permission_callback' => 'wordpress_mcp_admin_can_view_contact_forms',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider' => array(
+						'type'        => 'string',
+						'enum'        => array( 'contact-form-7', 'wpforms-lite' ),
+						'description' => __( 'Target form provider.', 'wordpress-mcp-admin-tools' ),
+					),
+					'form_id'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Target form ID.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'provider', 'form_id' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider'      => array( 'type' => 'string' ),
+					'form_id'       => array( 'type' => 'integer' ),
+					'title'         => array( 'type' => 'string' ),
+					'status'        => array( 'type' => 'string' ),
+					'edit_link'     => array( 'type' => 'string' ),
+					'configuration' => array(
+						'type'        => 'object',
+						'description' => __( 'Provider-specific form configuration.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/save-contact-form',
+		array(
+			'label'               => __( 'Save Contact Form', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Create or update a Contact Form 7 or WPForms Lite form through its native APIs.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_save_contact_form',
+			'permission_callback' => 'wordpress_mcp_admin_can_save_contact_forms',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider'      => array(
+						'type'        => 'string',
+						'enum'        => array( 'contact-form-7', 'wpforms-lite' ),
+						'description' => __( 'Target form provider.', 'wordpress-mcp-admin-tools' ),
+					),
+					'form_id'       => array(
+						'type'        => 'integer',
+						'description' => __( 'Existing form ID. Omit to create a new form.', 'wordpress-mcp-admin-tools' ),
+					),
+					'title'         => array(
+						'type'        => 'string',
+						'description' => __( 'Form title. Required when creating a new form.', 'wordpress-mcp-admin-tools' ),
+					),
+					'status'        => array(
+						'type'        => 'string',
+						'description' => __( 'Optional post status to apply after save.', 'wordpress-mcp-admin-tools' ),
+					),
+					'description'   => array(
+						'type'        => 'string',
+						'description' => __( 'Optional description used by WPForms Lite.', 'wordpress-mcp-admin-tools' ),
+					),
+					'configuration' => array(
+						'type'        => 'object',
+						'description' => __( 'Provider-specific configuration object. For Contact Form 7 use keys like form, mail, messages, additional_settings. For WPForms Lite pass form_data-compatible content.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'provider' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'provider'      => array( 'type' => 'string' ),
+					'form_id'       => array( 'type' => 'integer' ),
+					'title'         => array( 'type' => 'string' ),
+					'status'        => array( 'type' => 'string' ),
+					'edit_link'     => array( 'type' => 'string' ),
+					'configuration' => array(
+						'type'        => 'object',
+						'description' => __( 'Provider-specific form configuration after save.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
 		'wordpress-mcp-admin/get-navigation-menus',
 		array(
 			'label'               => __( 'Get Navigation Menus', 'wordpress-mcp-admin-tools' ),
@@ -1993,6 +2171,28 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'boolean',
 						'description' => __( 'Whether the plugin is now active.', 'wordpress-mcp-admin-tools' ),
 					),
+					'translation_sync' => array(
+						'type'        => 'object',
+						'description' => __( 'Result of the plugin translation sync attempt.', 'wordpress-mcp-admin-tools' ),
+						'properties'  => array(
+							'locale'      => array( 'type' => 'string' ),
+							'attempted'   => array( 'type' => 'boolean' ),
+							'updated'     => array( 'type' => 'boolean' ),
+							'plugin_slug' => array( 'type' => 'string' ),
+							'message'     => array( 'type' => 'string' ),
+							'translations' => array(
+								'type'  => 'array',
+								'items' => array(
+									'type'       => 'object',
+									'properties' => array(
+										'language' => array( 'type' => 'string' ),
+										'version'  => array( 'type' => 'string' ),
+										'package'  => array( 'type' => 'string' ),
+									),
+								),
+							),
+						),
+					),
 				),
 			),
 			'meta'                => array(
@@ -2319,6 +2519,28 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'activated' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Whether the plugin is active after the operation.', 'wordpress-mcp-admin-tools' ),
+					),
+					'translation_sync' => array(
+						'type'        => 'object',
+						'description' => __( 'Result of the plugin translation sync attempt.', 'wordpress-mcp-admin-tools' ),
+						'properties'  => array(
+							'locale'      => array( 'type' => 'string' ),
+							'attempted'   => array( 'type' => 'boolean' ),
+							'updated'     => array( 'type' => 'boolean' ),
+							'plugin_slug' => array( 'type' => 'string' ),
+							'message'     => array( 'type' => 'string' ),
+							'translations' => array(
+								'type'  => 'array',
+								'items' => array(
+									'type'       => 'object',
+									'properties' => array(
+										'language' => array( 'type' => 'string' ),
+										'version'  => array( 'type' => 'string' ),
+										'package'  => array( 'type' => 'string' ),
+									),
+								),
+							),
+						),
 					),
 				),
 			),

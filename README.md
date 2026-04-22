@@ -4,7 +4,7 @@
 
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
-このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
+このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、Contact Form 7 / WPForms Lite 用の専用フォーム操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
 
 ## 前提条件
 
@@ -22,6 +22,9 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - 任意の WordPress option の読取と更新
 - 任意の custom post type 一覧取得と単体更新
 - post meta / term meta の読取と更新
+- Contact Form 7 / WPForms Lite のフォーム一覧取得
+- Contact Form 7 / WPForms Lite のフォーム取得
+- Contact Form 7 / WPForms Lite のフォーム作成・更新
 - フロントページ、投稿ページ、投稿表示件数の更新
 - リモート URL からのメディア取り込み
 - メディアライブラリ一覧取得
@@ -71,6 +74,9 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/update-post-type-entry`
 - `wordpress-mcp-admin/get-object-meta`
 - `wordpress-mcp-admin/update-object-meta`
+- `wordpress-mcp-admin/list-contact-forms`
+- `wordpress-mcp-admin/get-contact-form`
+- `wordpress-mcp-admin/save-contact-form`
 - `wordpress-mcp-admin/install-theme`
 - `wordpress-mcp-admin/create-theme`
 - `wordpress-mcp-admin/get-theme-file`
@@ -260,6 +266,32 @@ EOF
 ```bash
 cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-options","parameters":{"options":[{"name":"blogname","value":"MCP Corporate Site"},{"name":"my_plugin_settings","value":{"headline":"Hello","enabled":true}}]}}}}
+EOF
+```
+
+### Contact Form 7 フォーム作成の例
+
+Contact Form 7 や WPForms Lite のフォームは、汎用の post/meta Ability ではなく専用 Ability を使って保存してください。
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/save-contact-form","parameters":{"provider":"contact-form-7","title":"お問い合わせ","configuration":{"form":"<label>お名前 [text* your-name]</label>\n<label>メールアドレス [email* your-email]</label>\n<label>お問い合わせ内容 [textarea* your-message]</label>","mail":{"subject":"[your-subject]","body":"お名前: [your-name]\nメール: [your-email]\n\n[your-message]"}}}}}}
+EOF
+```
+
+### Contact Form 7 フォーム取得の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-contact-form","parameters":{"provider":"contact-form-7","form_id":1805}}}}
+EOF
+```
+
+### WPForms Lite フォーム一覧の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/list-contact-forms","parameters":{"provider":"wpforms-lite","per_page":10}}}}
 EOF
 ```
 

@@ -260,6 +260,21 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'capability'  => 'post/term-specific edit or manage capability',
 		),
 		array(
+			'name'        => 'wordpress-mcp-admin/list-contact-forms',
+			'description' => __( 'Retrieve forms managed by Contact Form 7 or WPForms Lite.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'provider-specific form view capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-contact-form',
+			'description' => __( 'Retrieve a single Contact Form 7 or WPForms Lite form with provider-specific configuration.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'provider-specific form view capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/save-contact-form',
+			'description' => __( 'Create or update a Contact Form 7 or WPForms Lite form through its native APIs.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'provider-specific form edit capability',
+		),
+		array(
 			'name'        => 'wordpress-mcp-admin/get-navigation-menus',
 			'description' => __( 'Retrieve classic navigation menus, assigned locations, and existing block navigation posts.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'edit_theme_options',
