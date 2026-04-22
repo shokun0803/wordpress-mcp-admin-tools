@@ -242,37 +242,37 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 		array(
 			'name'        => 'wordpress-mcp-admin/get-post-type-entries',
 			'description' => __( 'Retrieve entries for an arbitrary post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'post-type-specific edit_posts capability',
+			'capability'  => __( 'post-type-specific edit_posts capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/update-post-type-entry',
 			'description' => __( 'Update a single entry from any post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'post-type-specific edit_post capability',
+			'capability'  => __( 'post-type-specific edit_post capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/get-object-meta',
 			'description' => __( 'Retrieve meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'post/term-specific edit or manage capability',
+			'capability'  => __( 'post/term-specific edit or manage capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/update-object-meta',
 			'description' => __( 'Update meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'post/term-specific edit or manage capability',
+			'capability'  => __( 'post/term-specific edit or manage capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/list-contact-forms',
 			'description' => __( 'Retrieve forms managed by Contact Form 7 or WPForms Lite.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'provider-specific form view capability',
+			'capability'  => __( 'provider-specific form view capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/get-contact-form',
 			'description' => __( 'Retrieve a single Contact Form 7 or WPForms Lite form with provider-specific configuration.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'provider-specific form view capability',
+			'capability'  => __( 'provider-specific form view capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/save-contact-form',
 			'description' => __( 'Create or update a Contact Form 7 or WPForms Lite form through its native APIs.', 'wordpress-mcp-admin-tools' ),
-			'capability'  => 'provider-specific form edit capability',
+			'capability'  => __( 'provider-specific form edit capability', 'wordpress-mcp-admin-tools' ),
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/get-navigation-menus',

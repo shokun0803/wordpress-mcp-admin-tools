@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: wordpress-mcp-admin-tools 0.4.6\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2026-04-21 00:00+0000\n"
-"PO-Revision-Date: 2026-04-21 00:00+0000\n"
+"PO-Revision-Date: 2026-04-22 00:00+0000\n"
 "Last-Translator: GitHub Copilot\n"
 "Language: ja\n"
 "Language-Team: Japanese\n"
@@ -150,6 +150,12 @@ msgstr "既存の投稿やカスタム投稿タイプ本文を block content で
 
 msgid "Retrieve the current block content of an existing post or custom post type entry."
 msgstr "既存の投稿やカスタム投稿タイプ本文にある現在の block content を取得します。"
+
+msgid "Retrieve the current WordPress Site Health test results and supported fixes."
+msgstr "現在の WordPress Site Health テスト結果と対応している修正を取得します。"
+
+msgid "Apply a supported fix for a current WordPress Site Health issue."
+msgstr "現在の WordPress Site Health 問題に対して、対応している修正を適用します。"
 
 msgid "Page ID whose block content should be replaced."
 msgstr "block content を置き換える固定ページ ID です。"
@@ -384,6 +390,99 @@ msgstr "有効なプラグイン識別子が必要です。"
 
 msgid "A valid plugin slug is required."
 msgstr "有効なプラグインスラッグが必要です。"
+
+msgid "Read and update arbitrary WordPress options exposed by core or plugins."
+msgstr "コアやプラグインが公開している任意の WordPress option を読み取り・更新できます。"
+
+msgid "Inspect and update custom post type entries used by plugins for structured settings or content."
+msgstr "プラグインが構造化された設定やコンテンツに使うカスタム投稿タイプ項目を確認・更新できます。"
+
+msgid "Read and update post meta and term meta without adding plugin-specific abilities."
+msgstr "プラグイン専用 Ability を追加しなくても、post meta と term meta を読み取り・更新できます。"
+
+msgid "Configure the front page, posts page, and other reading settings."
+msgstr "フロントページ、投稿ページ、その他の表示設定を構成できます。"
+
+msgid "Inspect the current Site Health results from WordPress."
+msgstr "WordPress の現在の Site Health 結果を確認できます。"
+
+msgid "Apply selected Site Health fixes that are already available from wp-admin."
+msgstr "wp-admin ですでに利用可能な Site Health 修正を適用できます。"
+
+msgid "Import media from remote URLs, browse the media library, and assign featured images."
+msgstr "リモート URL からメディアを取り込み、メディアライブラリを参照し、アイキャッチ画像を設定できます。"
+
+msgid "Update the site logo and site icon from existing media items."
+msgstr "既存のメディア項目からサイトロゴとサイトアイコンを更新できます。"
+
+msgid "Create or update classic navigation menus and assign them to theme locations while also inspecting block navigation posts."
+msgstr "クラシックナビゲーションメニューを作成・更新し、テーマロケーションへ割り当てつつ、block navigation 投稿も確認できます。"
+
+msgid "Read theme and plugin files before updating them through MCP."
+msgstr "MCP 経由で更新する前に、テーマとプラグインのファイルを読み取れます。"
+
+msgid "Update the site title, tagline, and other selected settings."
+msgstr "サイトタイトル、キャッチフレーズ、その他の選択した設定を更新できます。"
+
+msgid "Retrieve recent items from the media library."
+msgstr "メディアライブラリの最近の項目を取得します。"
+
+msgid "Assign or clear the featured image for a post or page."
+msgstr "投稿または固定ページのアイキャッチ画像を設定または解除します。"
+
+msgid "Update the site logo and site icon using existing media library items."
+msgstr "既存のメディアライブラリ項目を使ってサイトロゴとサイトアイコンを更新します。"
+
+msgid "Update the site title, tagline, and reading settings."
+msgstr "サイトタイトル、キャッチフレーズ、表示設定を更新します。"
+
+msgid "Retrieve arbitrary WordPress option values by option name."
+msgstr "option 名を指定して任意の WordPress option 値を取得します。"
+
+msgid "Update arbitrary WordPress options by option name."
+msgstr "option 名を指定して任意の WordPress option を更新します。"
+
+msgid "Retrieve entries for an arbitrary post type, including custom post types used by plugins."
+msgstr "プラグインが使うカスタム投稿タイプを含め、任意の投稿タイプの項目を取得します。"
+
+msgid "Update a single entry from any post type, including custom post types used by plugins."
+msgstr "プラグインが使うカスタム投稿タイプを含め、任意の投稿タイプの単一項目を更新します。"
+
+msgid "Retrieve meta values for a post or term."
+msgstr "投稿またはタームの meta 値を取得します。"
+
+msgid "Update meta values for a post or term."
+msgstr "投稿またはタームの meta 値を更新します。"
+
+msgid "Retrieve forms managed by Contact Form 7 or WPForms Lite."
+msgstr "Contact Form 7 または WPForms Lite が管理するフォームを取得します。"
+
+msgid "Retrieve a single Contact Form 7 or WPForms Lite form with provider-specific configuration."
+msgstr "provider ごとの設定を含む Contact Form 7 または WPForms Lite の単一フォームを取得します。"
+
+msgid "Create or update a Contact Form 7 or WPForms Lite form through its native APIs."
+msgstr "Contact Form 7 または WPForms Lite のフォームをネイティブ API 経由で作成または更新します。"
+
+msgid "Retrieve classic navigation menus, assigned locations, and existing block navigation posts."
+msgstr "クラシックナビゲーションメニュー、割り当て済みロケーション、既存の block navigation 投稿を取得します。"
+
+msgid "Create or update a classic navigation menu, its items, and optional location assignments."
+msgstr "クラシックナビゲーションメニュー、その項目、および任意のロケーション割り当てを作成または更新します。"
+
+msgid "post-type-specific edit_posts capability"
+msgstr "投稿タイプごとの edit_posts 権限"
+
+msgid "post-type-specific edit_post capability"
+msgstr "投稿タイプごとの edit_post 権限"
+
+msgid "post/term-specific edit or manage capability"
+msgstr "投稿またはタームごとの編集または管理権限"
+
+msgid "provider-specific form view capability"
+msgstr "provider ごとのフォーム閲覧権限"
+
+msgid "provider-specific form edit capability"
+msgstr "provider ごとのフォーム編集権限"
 
 msgid "A valid relative_path inside the plugin directory is required."
 msgstr "プラグインディレクトリ内の有効な relative_path が必要です。"
