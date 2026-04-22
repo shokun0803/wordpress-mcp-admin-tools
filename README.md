@@ -1,5 +1,7 @@
 # MCP Admin Tools for WordPress
 
+※ 100% AI 生成のため自己責任でご利用ください。
+
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
 このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。

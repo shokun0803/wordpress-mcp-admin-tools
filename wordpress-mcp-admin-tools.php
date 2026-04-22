@@ -4,7 +4,7 @@
  * Plugin URI: https://example.com/
  * Description: Registers abilities for managing WordPress content and viewing audit logs from MCP clients.
  * Version: 0.4.8
- * Author: GitHub Copilot
+ * Author: shokun0803, GitHub Copilot
  * License: GPL-2.0-or-later
  * Text Domain: wordpress-mcp-admin-tools
  * Domain Path: /languages
