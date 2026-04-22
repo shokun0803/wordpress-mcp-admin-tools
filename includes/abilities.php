@@ -614,6 +614,220 @@ function wordpress_mcp_admin_register_abilities(): void {
 	);
 
 	wp_register_ability(
+		'wordpress-mcp-admin/import-media-from-url',
+		array(
+			'label'               => __( 'Import Media From URL', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Download a remote file into the media library and optionally update its metadata.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_import_media_from_url',
+			'permission_callback' => 'wordpress_mcp_admin_can_upload_files',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'source_url'     => array(
+						'type'        => 'string',
+						'description' => __( 'Remote file URL to import into the media library.', 'wordpress-mcp-admin-tools' ),
+					),
+					'title'          => array(
+						'type'        => 'string',
+						'description' => __( 'Optional attachment title override.', 'wordpress-mcp-admin-tools' ),
+					),
+					'alt_text'       => array(
+						'type'        => 'string',
+						'description' => __( 'Optional image alt text.', 'wordpress-mcp-admin-tools' ),
+					),
+					'caption'        => array(
+						'type'        => 'string',
+						'description' => __( 'Optional attachment caption.', 'wordpress-mcp-admin-tools' ),
+					),
+					'description'    => array(
+						'type'        => 'string',
+						'description' => __( 'Optional attachment description.', 'wordpress-mcp-admin-tools' ),
+					),
+					'parent_post_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional post ID to attach the imported media item to.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'source_url' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'attachment_id' => array( 'type' => 'integer' ),
+					'title'         => array( 'type' => 'string' ),
+					'url'           => array( 'type' => 'string' ),
+					'mime_type'     => array( 'type' => 'string' ),
+					'alt_text'      => array( 'type' => 'string' ),
+					'caption'       => array( 'type' => 'string' ),
+					'description'   => array( 'type' => 'string' ),
+					'edit_link'     => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-media-items',
+		array(
+			'label'               => __( 'Get Media Items', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve recent items from the media library.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_media_items',
+			'permission_callback' => 'wordpress_mcp_admin_can_upload_files',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'search'    => array(
+						'type'        => 'string',
+						'description' => __( 'Optional search term.', 'wordpress-mcp-admin-tools' ),
+					),
+					'mime_type' => array(
+						'type'        => 'string',
+						'description' => __( 'Optional MIME type filter such as image or image/jpeg.', 'wordpress-mcp-admin-tools' ),
+					),
+					'per_page'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Number of items to return. Between 1 and 50.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'items' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'attachment_id' => array( 'type' => 'integer' ),
+								'title'         => array( 'type' => 'string' ),
+								'url'           => array( 'type' => 'string' ),
+								'mime_type'     => array( 'type' => 'string' ),
+								'alt_text'      => array( 'type' => 'string' ),
+								'caption'       => array( 'type' => 'string' ),
+								'description'   => array( 'type' => 'string' ),
+								'edit_link'     => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/set-featured-image',
+		array(
+			'label'               => __( 'Set Featured Image', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Assign or clear the featured image for a post or page.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_set_featured_image',
+			'permission_callback' => 'wordpress_mcp_admin_can_edit_posts',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id'       => array(
+						'type'        => 'integer',
+						'description' => __( 'Post or page ID to update.', 'wordpress-mcp-admin-tools' ),
+					),
+					'attachment_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Attachment ID to set. Use 0 to clear the current featured image.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'post_id', 'attachment_id' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id'            => array( 'type' => 'integer' ),
+					'featured_image_id'  => array( 'type' => 'integer' ),
+					'featured_image_url' => array( 'type' => 'string' ),
+					'edit_link'          => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/update-site-media',
+		array(
+			'label'               => __( 'Update Site Media', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Update the site logo and site icon using existing media library items.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_update_site_media',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'custom_logo_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Attachment ID to use as the custom logo. Use 0 to clear it.', 'wordpress-mcp-admin-tools' ),
+					),
+					'site_icon_id'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Attachment ID to use as the site icon. Use 0 to clear it.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'custom_logo_id'  => array( 'type' => 'integer' ),
+					'custom_logo_url' => array( 'type' => 'string' ),
+					'site_icon_id'    => array( 'type' => 'integer' ),
+					'site_icon_url'   => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
 		'wordpress-mcp-admin/get-site-health-status',
 		array(
 			'label'               => __( 'Get Site Health Status', 'wordpress-mcp-admin-tools' ),
@@ -760,7 +974,7 @@ function wordpress_mcp_admin_register_abilities(): void {
 		'wordpress-mcp-admin/update-general-settings',
 		array(
 			'label'               => __( 'Update General Settings', 'wordpress-mcp-admin-tools' ),
-			'description'         => __( 'Update the site title and tagline.', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Update the site title, tagline, and reading settings.', 'wordpress-mcp-admin-tools' ),
 			'category'            => 'wordpress-mcp-admin',
 			'execute_callback'    => 'wordpress_mcp_admin_execute_update_general_settings',
 			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
@@ -775,6 +989,23 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'string',
 						'description' => __( 'New tagline.', 'wordpress-mcp-admin-tools' ),
 					),
+					'show_on_front'   => array(
+						'type'        => 'string',
+						'enum'        => array( 'posts', 'page' ),
+						'description' => __( 'Whether the homepage shows latest posts or a static page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page_on_front'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Page ID to use as the static front page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page_for_posts'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Page ID to use as the posts index page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'posts_per_page'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Number of posts to show per archive page.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 			),
 			'output_schema'       => array(
@@ -788,6 +1019,22 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'string',
 						'description' => __( 'Updated tagline.', 'wordpress-mcp-admin-tools' ),
 					),
+					'show_on_front'   => array(
+						'type'        => 'string',
+						'description' => __( 'Updated homepage display mode.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page_on_front'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Updated static front page ID.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page_for_posts'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Updated posts index page ID.', 'wordpress-mcp-admin-tools' ),
+					),
+					'posts_per_page'  => array(
+						'type'        => 'integer',
+						'description' => __( 'Updated number of posts shown per archive page.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 			),
 			'meta'                => array(
@@ -799,6 +1046,554 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'readonly'   => false,
 					'destructive' => false,
 					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-options',
+		array(
+			'label'               => __( 'Get Options', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve arbitrary WordPress option values by option name.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_options',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'names' => array(
+						'type'        => 'array',
+						'description' => __( 'Option names to retrieve.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type' => 'string',
+						),
+					),
+				),
+				'required'   => array( 'names' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'items' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'name'  => array( 'type' => 'string' ),
+								'value' => array(
+									'description' => __( 'Stored option value.', 'wordpress-mcp-admin-tools' ),
+								),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/update-options',
+		array(
+			'label'               => __( 'Update Options', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Update arbitrary WordPress options by option name.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_update_options',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'options' => array(
+						'type'        => 'array',
+						'description' => __( 'Option updates to apply.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'name'  => array( 'type' => 'string' ),
+								'value' => array(
+									'description' => __( 'New option value. Any JSON-serializable value is supported.', 'wordpress-mcp-admin-tools' ),
+								),
+							),
+						),
+					),
+				),
+				'required'   => array( 'options' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'items' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'name'  => array( 'type' => 'string' ),
+								'value' => array(
+									'description' => __( 'Updated option value.', 'wordpress-mcp-admin-tools' ),
+								),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-post-type-entries',
+		array(
+			'label'               => __( 'Get Post Type Entries', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve entries for an arbitrary post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_post_type_entries',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_post_type_entries',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_type'       => array(
+						'type'        => 'string',
+						'description' => __( 'Target post type slug.', 'wordpress-mcp-admin-tools' ),
+					),
+					'search'          => array(
+						'type'        => 'string',
+						'description' => __( 'Optional search term.', 'wordpress-mcp-admin-tools' ),
+					),
+					'statuses'        => array(
+						'type'        => 'array',
+						'description' => __( 'Optional list of post statuses to include.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type' => 'string',
+						),
+					),
+					'per_page'        => array(
+						'type'        => 'integer',
+						'description' => __( 'Number of entries to return. Between 1 and 50.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page'            => array(
+						'type'        => 'integer',
+						'description' => __( 'Results page number.', 'wordpress-mcp-admin-tools' ),
+					),
+					'include_content' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Include raw post_content for each entry when true.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'post_type' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_type'     => array( 'type' => 'string' ),
+					'page'          => array( 'type' => 'integer' ),
+					'per_page'      => array( 'type' => 'integer' ),
+					'found_posts'   => array( 'type' => 'integer' ),
+					'max_num_pages' => array( 'type' => 'integer' ),
+					'entries'       => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'post_id'    => array( 'type' => 'integer' ),
+								'post_type'  => array( 'type' => 'string' ),
+								'title'      => array( 'type' => 'string' ),
+								'slug'       => array( 'type' => 'string' ),
+								'status'     => array( 'type' => 'string' ),
+								'excerpt'    => array( 'type' => 'string' ),
+								'menu_order' => array( 'type' => 'integer' ),
+								'content'    => array(
+									'type'        => 'string',
+									'description' => __( 'Returned only when include_content is true.', 'wordpress-mcp-admin-tools' ),
+								),
+								'edit_link'   => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/update-post-type-entry',
+		array(
+			'label'               => __( 'Update Post Type Entry', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Update a single entry from any post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_update_post_type_entry',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_post_type_entries',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id'    => array(
+						'type'        => 'integer',
+						'description' => __( 'Entry ID to update.', 'wordpress-mcp-admin-tools' ),
+					),
+					'post_type'  => array(
+						'type'        => 'string',
+						'description' => __( 'Optional expected post type slug for validation.', 'wordpress-mcp-admin-tools' ),
+					),
+					'title'      => array(
+						'type'        => 'string',
+						'description' => __( 'New entry title.', 'wordpress-mcp-admin-tools' ),
+					),
+					'content'    => array(
+						'type'        => 'string',
+						'description' => __( 'New entry content.', 'wordpress-mcp-admin-tools' ),
+					),
+					'excerpt'    => array(
+						'type'        => 'string',
+						'description' => __( 'New entry excerpt.', 'wordpress-mcp-admin-tools' ),
+					),
+					'status'     => array(
+						'type'        => 'string',
+						'description' => __( 'New post status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'slug'       => array(
+						'type'        => 'string',
+						'description' => __( 'New post slug.', 'wordpress-mcp-admin-tools' ),
+					),
+					'menu_order' => array(
+						'type'        => 'integer',
+						'description' => __( 'New menu order value.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required'   => array( 'post_id' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id'    => array( 'type' => 'integer' ),
+					'post_type'  => array( 'type' => 'string' ),
+					'title'      => array( 'type' => 'string' ),
+					'slug'       => array( 'type' => 'string' ),
+					'status'     => array( 'type' => 'string' ),
+					'excerpt'    => array( 'type' => 'string' ),
+					'menu_order' => array( 'type' => 'integer' ),
+					'content'    => array(
+						'type'        => 'string',
+						'description' => __( 'Returned when content was requested in the update.', 'wordpress-mcp-admin-tools' ),
+					),
+					'edit_link'  => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-object-meta',
+		array(
+			'label'               => __( 'Get Object Meta', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_object_meta',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_object_meta',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'object_type' => array(
+						'type'        => 'string',
+						'enum'        => array( 'post', 'term' ),
+						'description' => __( 'Metadata object type.', 'wordpress-mcp-admin-tools' ),
+					),
+					'object_id'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Target post or term ID.', 'wordpress-mcp-admin-tools' ),
+					),
+					'keys'        => array(
+						'type'        => 'array',
+						'description' => __( 'Optional list of meta keys to retrieve. When omitted, all meta keys are returned.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type' => 'string',
+						),
+					),
+				),
+				'required'   => array( 'object_type', 'object_id' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'object_type' => array( 'type' => 'string' ),
+					'object_id'   => array( 'type' => 'integer' ),
+					'items'       => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'key'    => array( 'type' => 'string' ),
+								'values' => array(
+									'type'        => 'array',
+									'description' => __( 'Stored values for the meta key.', 'wordpress-mcp-admin-tools' ),
+									'items'       => array(),
+								),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/update-object-meta',
+		array(
+			'label'               => __( 'Update Object Meta', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Update meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_update_object_meta',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_object_meta',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'object_type' => array(
+						'type'        => 'string',
+						'enum'        => array( 'post', 'term' ),
+						'description' => __( 'Metadata object type.', 'wordpress-mcp-admin-tools' ),
+					),
+					'object_id'   => array(
+						'type'        => 'integer',
+						'description' => __( 'Target post or term ID.', 'wordpress-mcp-admin-tools' ),
+					),
+					'entries'     => array(
+						'type'        => 'array',
+						'description' => __( 'Meta entries to update.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'key'   => array( 'type' => 'string' ),
+								'value' => array(
+									'description' => __( 'New meta value. Any JSON-serializable value is supported.', 'wordpress-mcp-admin-tools' ),
+								),
+							),
+						),
+					),
+				),
+				'required'   => array( 'object_type', 'object_id', 'entries' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'object_type' => array( 'type' => 'string' ),
+					'object_id'   => array( 'type' => 'integer' ),
+					'items'       => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'key'    => array( 'type' => 'string' ),
+								'values' => array(
+									'type'        => 'array',
+									'description' => __( 'Stored values after update.', 'wordpress-mcp-admin-tools' ),
+									'items'       => array(),
+								),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/get-navigation-menus',
+		array(
+			'label'               => __( 'Get Navigation Menus', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve classic navigation menus, assigned locations, and existing block navigation posts.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_navigation_menus',
+			'permission_callback' => 'wordpress_mcp_admin_can_edit_theme_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'include_items' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Include classic menu items in the response when true.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'menus' => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'object' ),
+					),
+					'locations' => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'object' ),
+					),
+					'navigation_posts' => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'object' ),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/set-navigation-menu',
+		array(
+			'label'               => __( 'Set Navigation Menu', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Create or update a classic navigation menu, its items, and optional location assignments.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_set_navigation_menu',
+			'permission_callback' => 'wordpress_mcp_admin_can_edit_theme_options',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'menu'          => array(
+						'type'        => 'string',
+						'description' => __( 'Existing menu ID, slug, or name to update.', 'wordpress-mcp-admin-tools' ),
+					),
+					'name'          => array(
+						'type'        => 'string',
+						'description' => __( 'Menu name. Required when creating a new menu.', 'wordpress-mcp-admin-tools' ),
+					),
+					'slug'          => array(
+						'type'        => 'string',
+						'description' => __( 'Optional menu slug.', 'wordpress-mcp-admin-tools' ),
+					),
+					'description'   => array(
+						'type'        => 'string',
+						'description' => __( 'Optional menu description.', 'wordpress-mcp-admin-tools' ),
+					),
+					'replace_items' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Replace existing items when items are provided. Defaults to true.', 'wordpress-mcp-admin-tools' ),
+					),
+					'locations'     => array(
+						'type'        => 'array',
+						'description' => __( 'Registered menu location slugs to assign this menu to.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type' => 'string',
+						),
+					),
+					'items'         => array(
+						'type'        => 'array',
+						'description' => __( 'Menu items to create. parent_index can be used for nesting and must reference an earlier item in the same array.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type'       => 'object',
+							'properties' => array(
+								'title'        => array( 'type' => 'string' ),
+								'type'         => array( 'type' => 'string' ),
+								'object_id'    => array( 'type' => 'integer' ),
+								'url'          => array( 'type' => 'string' ),
+								'parent_index' => array( 'type' => 'integer' ),
+								'description'  => array( 'type' => 'string' ),
+								'target'       => array( 'type' => 'string' ),
+								'classes'      => array(
+									'type'  => 'array',
+									'items' => array( 'type' => 'string' ),
+								),
+							),
+						),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'menu_id'     => array( 'type' => 'integer' ),
+					'name'        => array( 'type' => 'string' ),
+					'slug'        => array( 'type' => 'string' ),
+					'description' => array( 'type' => 'string' ),
+					'locations'   => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'string' ),
+					),
+					'items_count' => array( 'type' => 'integer' ),
+					'items'       => array(
+						'type'  => 'array',
+						'items' => array( 'type' => 'object' ),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
 				),
 			),
 		)

@@ -193,6 +193,308 @@ function wordpress_mcp_admin_can_activate_plugins( array $input = array() ): boo
 }
 
 /**
+ * メディアアップロード権限を確認します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return bool
+ */
+function wordpress_mcp_admin_can_upload_files( array $input = array() ): bool {
+	unset( $input );
+
+	return current_user_can( 'upload_files' );
+}
+
+/**
+ * テーマオプション編集権限を確認します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return bool
+ */
+function wordpress_mcp_admin_can_edit_theme_options( array $input = array() ): bool {
+	unset( $input );
+
+	return current_user_can( 'edit_theme_options' );
+}
+
+/**
+ * 任意の投稿タイプ項目を操作できるかを確認します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return bool
+ */
+function wordpress_mcp_admin_can_manage_post_type_entries( array $input = array() ): bool {
+	if ( isset( $input['post_id'] ) && (int) $input['post_id'] > 0 ) {
+		$post = get_post( (int) $input['post_id'] );
+
+		if ( $post instanceof WP_Post ) {
+			$post_type_object = get_post_type_object( $post->post_type );
+
+			if ( $post_type_object && isset( $post_type_object->cap->edit_post ) ) {
+				return current_user_can( $post_type_object->cap->edit_post, $post->ID );
+			}
+
+			return current_user_can( 'edit_post', $post->ID ) || current_user_can( 'edit_posts' );
+		}
+	}
+
+	$post_type = isset( $input['post_type'] ) ? sanitize_key( (string) $input['post_type'] ) : 'post';
+
+	if ( ! post_type_exists( $post_type ) ) {
+		return false;
+	}
+
+	$post_type_object = get_post_type_object( $post_type );
+	$capability       = $post_type_object && isset( $post_type_object->cap->edit_posts )
+		? (string) $post_type_object->cap->edit_posts
+		: 'edit_posts';
+
+	return current_user_can( $capability );
+}
+
+/**
+ * 投稿またはタームのメタデータを操作できるかを確認します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return bool
+ */
+function wordpress_mcp_admin_can_manage_object_meta( array $input = array() ): bool {
+	$object_type = isset( $input['object_type'] ) ? sanitize_key( (string) $input['object_type'] ) : '';
+	$object_id   = isset( $input['object_id'] ) ? (int) $input['object_id'] : 0;
+
+	if ( 'post' === $object_type ) {
+		if ( $object_id > 0 ) {
+			$post = get_post( $object_id );
+
+			if ( $post instanceof WP_Post ) {
+				$post_type_object = get_post_type_object( $post->post_type );
+
+				if ( $post_type_object && isset( $post_type_object->cap->edit_post ) ) {
+					return current_user_can( $post_type_object->cap->edit_post, $post->ID );
+				}
+
+				return current_user_can( 'edit_post', $post->ID ) || current_user_can( 'edit_posts' );
+			}
+		}
+
+		return current_user_can( 'edit_posts' );
+	}
+
+	if ( 'term' === $object_type ) {
+		if ( $object_id > 0 ) {
+			$term = get_term( $object_id );
+
+			if ( $term instanceof WP_Term ) {
+				$taxonomy = get_taxonomy( $term->taxonomy );
+
+				if ( $taxonomy && isset( $taxonomy->cap->manage_terms ) ) {
+					return current_user_can( $taxonomy->cap->manage_terms );
+				}
+			}
+		}
+
+		return current_user_can( 'manage_categories' );
+	}
+
+	return false;
+}
+
+/**
+ * JSON 由来の入力値を再帰的に正規化します。
+ *
+ * @param mixed $value 入力値。
+ * @return mixed
+ */
+function wordpress_mcp_admin_normalize_serializable_value( $value ) {
+	if ( is_array( $value ) ) {
+		$normalized = array();
+
+		foreach ( $value as $key => $nested_value ) {
+			$normalized[ $key ] = wordpress_mcp_admin_normalize_serializable_value( $nested_value );
+		}
+
+		return $normalized;
+	}
+
+	if ( is_string( $value ) ) {
+		return wp_unslash( $value );
+	}
+
+	return $value;
+}
+
+/**
+ * オプション名を検証します。
+ *
+ * @param mixed $value 入力値。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_option_name( $value ) {
+	$option_name = is_scalar( $value ) ? trim( sanitize_text_field( wp_unslash( (string) $value ) ) ) : '';
+
+	if ( '' === $option_name ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_option_name',
+			__( 'Each option name must be a non-empty string.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $option_name;
+}
+
+/**
+ * メタキーを検証します。
+ *
+ * @param mixed $value 入力値。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_meta_key( $value ) {
+	$meta_key = is_scalar( $value ) ? trim( sanitize_text_field( wp_unslash( (string) $value ) ) ) : '';
+
+	if ( '' === $meta_key ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_meta_key',
+			__( 'Each meta key must be a non-empty string.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $meta_key;
+}
+
+/**
+ * 監査ログ向けに文字列配列を要約します。
+ *
+ * @param string              $label ラベル。
+ * @param array<int, string>  $values 値配列。
+ * @return string
+ */
+function wordpress_mcp_admin_summarize_string_list( string $label, array $values ): string {
+	$values = array_values( array_filter( array_map( 'strval', $values ), static fn( string $value ): bool => '' !== $value ) );
+
+	if ( empty( $values ) ) {
+		return '';
+	}
+
+	$preview = array_slice( $values, 0, 5 );
+	$summary = $label . '=' . implode( ',', $preview );
+
+	if ( count( $values ) > count( $preview ) ) {
+		$summary .= ',...';
+	}
+
+	return $summary;
+}
+
+/**
+ * オプション情報を返却用配列に整形します。
+ *
+ * @param string $option_name オプション名。
+ * @param mixed  $value オプション値。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_option_record( string $option_name, $value ): array {
+	return array(
+		'name'  => $option_name,
+		'value' => $value,
+	);
+}
+
+/**
+ * 投稿タイプ項目を返却用配列に整形します。
+ *
+ * @param WP_Post $post 投稿オブジェクト。
+ * @param bool    $include_content content を含める場合は true。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_post_type_entry_record( WP_Post $post, bool $include_content = false ): array {
+	$record = array(
+		'post_id'    => (int) $post->ID,
+		'post_type'  => (string) $post->post_type,
+		'title'      => (string) get_the_title( $post ),
+		'slug'       => (string) $post->post_name,
+		'status'     => (string) get_post_status( $post ),
+		'excerpt'    => (string) $post->post_excerpt,
+		'menu_order' => (int) $post->menu_order,
+		'edit_link'  => (string) get_edit_post_link( $post->ID, 'raw' ),
+	);
+
+	if ( $include_content ) {
+		$record['content'] = (string) $post->post_content;
+	}
+
+	return $record;
+}
+
+/**
+ * メタデータ項目を返却用配列に整形します。
+ *
+ * @param string            $meta_key メタキー。
+ * @param array<int, mixed> $values メタ値一覧。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_object_meta_record( string $meta_key, array $values ): array {
+	return array(
+		'key'    => $meta_key,
+		'values' => array_values( $values ),
+	);
+}
+
+/**
+ * メタデータ対象オブジェクトを検証します。
+ *
+ * @param string $object_type オブジェクト種別。
+ * @param int    $object_id オブジェクト ID。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_validate_object_meta_target( string $object_type, int $object_id ) {
+	if ( $object_id <= 0 ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_object_id',
+			__( 'A valid object_id is required.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	if ( 'post' === $object_type ) {
+		$post = get_post( $object_id );
+
+		if ( ! $post instanceof WP_Post ) {
+			return new WP_Error(
+				'wordpress_mcp_admin_post_not_found',
+				__( 'The specified post could not be found.', 'wordpress-mcp-admin-tools' )
+			);
+		}
+
+		return array(
+			'object_type' => 'post',
+			'object_id'   => (int) $post->ID,
+			'target_type' => 'post',
+		);
+	}
+
+	if ( 'term' === $object_type ) {
+		$term = get_term( $object_id );
+
+		if ( ! $term instanceof WP_Term ) {
+			return new WP_Error(
+				'wordpress_mcp_admin_term_not_found',
+				__( 'The specified term could not be found.', 'wordpress-mcp-admin-tools' )
+			);
+		}
+
+		return array(
+			'object_type' => 'term',
+			'object_id'   => (int) $term->term_id,
+			'target_type' => 'term',
+			'taxonomy'    => (string) $term->taxonomy,
+		);
+	}
+
+	return new WP_Error(
+		'wordpress_mcp_admin_invalid_object_type',
+		__( 'object_type must be either post or term.', 'wordpress-mcp-admin-tools' )
+	);
+}
+
+/**
  * プラグイン情報を配列に正規化します。
  *
  * @param string $plugin_basename プラグイン basename。
@@ -331,6 +633,429 @@ function wordpress_mcp_admin_get_plugin_editor_link( string $plugin_basename ): 
 		),
 		admin_url( 'plugin-editor.php' )
 	);
+}
+
+/**
+ * 添付ファイルを検証して返します。
+ *
+ * @param int    $attachment_id 添付ファイル ID。
+ * @param string $error_code エラーコード。
+ * @param string $error_message エラーメッセージ。
+ * @return WP_Post|WP_Error
+ */
+function wordpress_mcp_admin_get_attachment_post( int $attachment_id, string $error_code, string $error_message ) {
+	if ( $attachment_id <= 0 ) {
+		return new WP_Error( $error_code, $error_message );
+	}
+
+	$attachment = get_post( $attachment_id );
+
+	if ( ! $attachment instanceof WP_Post || 'attachment' !== $attachment->post_type ) {
+		return new WP_Error( $error_code, $error_message );
+	}
+
+	return $attachment;
+}
+
+/**
+ * 添付ファイルが画像かどうかを返します。
+ *
+ * @param WP_Post $attachment 添付ファイル投稿。
+ * @return bool
+ */
+function wordpress_mcp_admin_attachment_is_image( WP_Post $attachment ): bool {
+	$mime_type = (string) get_post_mime_type( $attachment );
+
+	return '' !== $mime_type && str_starts_with( $mime_type, 'image/' );
+}
+
+/**
+ * 添付ファイル情報を配列に正規化します。
+ *
+ * @param WP_Post $attachment 添付ファイル投稿。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_media_record( WP_Post $attachment ): array {
+	$attachment_url = wp_get_attachment_url( $attachment->ID );
+
+	return array(
+		'attachment_id' => (int) $attachment->ID,
+		'title'         => (string) get_the_title( $attachment ),
+		'url'           => is_string( $attachment_url ) ? $attachment_url : '',
+		'mime_type'     => (string) get_post_mime_type( $attachment ),
+		'alt_text'      => (string) get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true ),
+		'caption'       => (string) $attachment->post_excerpt,
+		'description'   => (string) $attachment->post_content,
+		'edit_link'     => (string) get_edit_post_link( $attachment->ID, 'raw' ),
+	);
+}
+
+/**
+ * ナビゲーションメニュー識別子からメニューを解決します。
+ *
+ * @param mixed $identifier メニュー ID、スラッグ、または名前。
+ * @return WP_Term|WP_Error
+ */
+function wordpress_mcp_admin_resolve_navigation_menu( $identifier ) {
+	if ( ! is_scalar( $identifier ) ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_navigation_menu',
+			__( 'A valid navigation menu identifier is required.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	$menu_identifier = trim( sanitize_text_field( (string) $identifier ) );
+
+	if ( '' === $menu_identifier ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_navigation_menu',
+			__( 'A valid navigation menu identifier is required.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	$menu = ctype_digit( $menu_identifier )
+		? wp_get_nav_menu_object( (int) $menu_identifier )
+		: wp_get_nav_menu_object( $menu_identifier );
+
+	if ( ! $menu instanceof WP_Term ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_navigation_menu_not_found',
+			__( 'The specified navigation menu could not be found.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $menu;
+}
+
+/**
+ * ナビゲーションメニュー項目を配列に正規化します。
+ *
+ * @param WP_Post $menu_item メニュー項目投稿。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_navigation_menu_item( WP_Post $menu_item ): array {
+	$prepared_item = wp_setup_nav_menu_item( $menu_item );
+	$classes       = is_array( $prepared_item->classes ) ? array_values( array_filter( array_map( 'strval', $prepared_item->classes ) ) ) : array();
+
+	return array(
+		'menu_item_id' => (int) $prepared_item->ID,
+		'title'        => (string) $prepared_item->title,
+		'type'         => (string) $prepared_item->type,
+		'object'       => (string) $prepared_item->object,
+		'object_id'    => (int) $prepared_item->object_id,
+		'url'          => (string) $prepared_item->url,
+		'parent_id'    => (int) $prepared_item->menu_item_parent,
+		'target'       => (string) $prepared_item->target,
+		'classes'      => $classes,
+	);
+}
+
+/**
+ * 指定メニューに割り当てられたロケーション一覧を返します。
+ *
+ * @param int $menu_id メニュー term ID。
+ * @return string[]
+ */
+function wordpress_mcp_admin_get_navigation_menu_locations_for_menu( int $menu_id ): array {
+	$locations          = (array) get_nav_menu_locations();
+	$assigned_locations = array();
+
+	foreach ( $locations as $location => $assigned_menu_id ) {
+		if ( $menu_id === (int) $assigned_menu_id ) {
+			$assigned_locations[] = (string) $location;
+		}
+	}
+
+	return $assigned_locations;
+}
+
+/**
+ * ナビゲーションメニュー情報を配列に正規化します。
+ *
+ * @param WP_Term $menu メニュー term。
+ * @param bool    $include_items 項目を含める場合は true。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_navigation_menu_record( WP_Term $menu, bool $include_items = false ): array {
+	$items = wp_get_nav_menu_items( $menu->term_id, array( 'post_status' => 'publish,draft' ) );
+
+	$record = array(
+		'menu_id'     => (int) $menu->term_id,
+		'name'        => (string) $menu->name,
+		'slug'        => (string) $menu->slug,
+		'description' => (string) $menu->description,
+		'locations'   => wordpress_mcp_admin_get_navigation_menu_locations_for_menu( (int) $menu->term_id ),
+		'items_count' => is_array( $items ) ? count( $items ) : 0,
+	);
+
+	if ( $include_items ) {
+		$record['items'] = array();
+
+		if ( is_array( $items ) ) {
+			foreach ( $items as $item ) {
+				if ( $item instanceof WP_Post ) {
+					$record['items'][] = wordpress_mcp_admin_format_navigation_menu_item( $item );
+				}
+			}
+		}
+	}
+
+	return $record;
+}
+
+/**
+ * ブロックナビゲーション投稿を配列に正規化します。
+ *
+ * @param WP_Post $navigation_post ナビゲーション投稿。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_navigation_post_record( WP_Post $navigation_post ): array {
+	return array(
+		'post_id'   => (int) $navigation_post->ID,
+		'title'     => (string) get_the_title( $navigation_post ),
+		'status'    => (string) get_post_status( $navigation_post ),
+		'edit_link' => (string) get_edit_post_link( $navigation_post->ID, 'raw' ),
+	);
+}
+
+/**
+ * ブロックナビゲーション投稿の一覧を取得します。
+ *
+ * @param int $limit 取得件数。
+ * @return array<int, array<string, mixed>>
+ */
+function wordpress_mcp_admin_get_navigation_posts( int $limit = 20 ): array {
+	if ( ! post_type_exists( 'wp_navigation' ) ) {
+		return array();
+	}
+
+	$posts = get_posts(
+		array(
+			'post_type'      => 'wp_navigation',
+			'post_status'    => array( 'publish', 'draft', 'private' ),
+			'posts_per_page' => max( 1, min( 50, $limit ) ),
+			'orderby'        => 'date',
+			'order'          => 'DESC',
+		)
+	);
+	$records = array();
+
+	foreach ( $posts as $post ) {
+		if ( $post instanceof WP_Post ) {
+			$records[] = wordpress_mcp_admin_format_navigation_post_record( $post );
+		}
+	}
+
+	return $records;
+}
+
+/**
+ * ナビゲーションロケーションを検証します。
+ *
+ * @param array<int, mixed> $locations ロケーション一覧。
+ * @return array<int, string>|WP_Error
+ */
+function wordpress_mcp_admin_normalize_navigation_locations( array $locations ) {
+	$registered_locations = get_registered_nav_menus();
+	$normalized_locations = array();
+
+	foreach ( $locations as $location ) {
+		if ( ! is_scalar( $location ) ) {
+			return new WP_Error(
+				'wordpress_mcp_admin_invalid_navigation_location',
+				__( 'Each navigation location must be a string.', 'wordpress-mcp-admin-tools' )
+			);
+		}
+
+		$location_key = sanitize_key( (string) $location );
+
+		if ( '' === $location_key || ! array_key_exists( $location_key, $registered_locations ) ) {
+			return new WP_Error(
+				'wordpress_mcp_admin_unknown_navigation_location',
+				__( 'One or more navigation locations are not registered by the active theme.', 'wordpress-mcp-admin-tools' )
+			);
+		}
+
+		$normalized_locations[] = $location_key;
+	}
+
+	return array_values( array_unique( $normalized_locations ) );
+}
+
+/**
+ * 指定メニューをナビゲーションロケーションへ割り当てます。
+ *
+ * @param int               $menu_id メニュー term ID。
+ * @param array<int, string> $locations ロケーション一覧。
+ * @return array<int, string>
+ */
+function wordpress_mcp_admin_assign_navigation_menu_locations( int $menu_id, array $locations ): array {
+	$current_locations = (array) get_theme_mod( 'nav_menu_locations', array() );
+
+	foreach ( $locations as $location ) {
+		$current_locations[ $location ] = $menu_id;
+	}
+
+	set_theme_mod( 'nav_menu_locations', $current_locations );
+
+	return wordpress_mcp_admin_get_navigation_menu_locations_for_menu( $menu_id );
+}
+
+/**
+ * ナビゲーションメニュー項目を作成または置換します。
+ *
+ * @param int               $menu_id メニュー term ID。
+ * @param array<int, mixed> $items 項目配列。
+ * @param bool              $replace_existing 既存項目を置換する場合は true。
+ * @return array<int, int>|WP_Error
+ */
+function wordpress_mcp_admin_save_navigation_menu_items( int $menu_id, array $items, bool $replace_existing ) {
+	if ( $replace_existing ) {
+		$existing_items = wp_get_nav_menu_items( $menu_id, array( 'post_status' => 'publish,draft' ) );
+
+		if ( is_array( $existing_items ) ) {
+			foreach ( $existing_items as $existing_item ) {
+				if ( $existing_item instanceof WP_Post ) {
+					wp_delete_post( $existing_item->ID, true );
+				}
+			}
+		}
+	}
+
+	$created_item_ids = array();
+
+	foreach ( $items as $index => $item ) {
+		if ( ! is_array( $item ) ) {
+			return new WP_Error(
+				'wordpress_mcp_admin_invalid_navigation_item',
+				__( 'Each navigation item must be an object.', 'wordpress-mcp-admin-tools' )
+			);
+		}
+
+		$item_type      = isset( $item['type'] ) ? sanitize_key( (string) $item['type'] ) : 'custom';
+		$item_title     = isset( $item['title'] ) ? sanitize_text_field( wp_unslash( (string) $item['title'] ) ) : '';
+		$item_parent_id = 0;
+		$menu_item_data = array(
+			'menu-item-position' => $index + 1,
+			'menu-item-status'   => 'publish',
+		);
+
+		if ( isset( $item['parent_index'] ) ) {
+			$parent_index = (int) $item['parent_index'];
+
+			if ( ! array_key_exists( $parent_index, $created_item_ids ) ) {
+				return new WP_Error(
+					'wordpress_mcp_admin_invalid_navigation_parent',
+					__( 'parent_index must refer to a previously created navigation item in the same request.', 'wordpress-mcp-admin-tools' )
+				);
+			}
+
+			$item_parent_id = $created_item_ids[ $parent_index ];
+		}
+
+		switch ( $item_type ) {
+			case 'page':
+			case 'post':
+				$object_id = isset( $item['object_id'] ) ? (int) $item['object_id'] : 0;
+				$post      = get_post( $object_id );
+
+				if ( ! $post instanceof WP_Post || 'attachment' === $post->post_type ) {
+					return new WP_Error(
+						'wordpress_mcp_admin_invalid_navigation_object',
+						__( 'A valid page or post object_id is required for navigation items.', 'wordpress-mcp-admin-tools' )
+					);
+				}
+
+				if ( 'page' === $item_type && 'page' !== $post->post_type ) {
+					return new WP_Error(
+						'wordpress_mcp_admin_invalid_navigation_page',
+						__( 'The specified object_id is not a page.', 'wordpress-mcp-admin-tools' )
+					);
+				}
+
+				$menu_item_data['menu-item-type']      = 'post_type';
+				$menu_item_data['menu-item-object']    = $post->post_type;
+				$menu_item_data['menu-item-object-id'] = $object_id;
+				$menu_item_data['menu-item-title']     = '' !== $item_title ? $item_title : (string) get_the_title( $post );
+				break;
+
+			case 'category':
+				$object_id = isset( $item['object_id'] ) ? (int) $item['object_id'] : 0;
+				$term      = get_term( $object_id, 'category' );
+
+				if ( ! $term instanceof WP_Term ) {
+					return new WP_Error(
+						'wordpress_mcp_admin_invalid_navigation_category',
+						__( 'A valid category object_id is required for category navigation items.', 'wordpress-mcp-admin-tools' )
+					);
+				}
+
+				$menu_item_data['menu-item-type']      = 'taxonomy';
+				$menu_item_data['menu-item-object']    = 'category';
+				$menu_item_data['menu-item-object-id'] = $term->term_id;
+				$menu_item_data['menu-item-title']     = '' !== $item_title ? $item_title : (string) $term->name;
+				break;
+
+			case 'custom':
+				$item_url = isset( $item['url'] ) ? esc_url_raw( wp_unslash( (string) $item['url'] ) ) : '';
+
+				if ( '' === $item_url ) {
+					return new WP_Error(
+						'wordpress_mcp_admin_missing_navigation_url',
+						__( 'A valid url is required for custom navigation items.', 'wordpress-mcp-admin-tools' )
+					);
+				}
+
+				$menu_item_data['menu-item-type']  = 'custom';
+				$menu_item_data['menu-item-url']   = $item_url;
+				$menu_item_data['menu-item-title'] = '' !== $item_title ? $item_title : $item_url;
+				break;
+
+			default:
+				return new WP_Error(
+					'wordpress_mcp_admin_invalid_navigation_type',
+					__( 'Navigation item type must be page, post, category, or custom.', 'wordpress-mcp-admin-tools' )
+				);
+		}
+
+		if ( isset( $item['description'] ) ) {
+			$menu_item_data['menu-item-description'] = sanitize_textarea_field( wp_unslash( (string) $item['description'] ) );
+		}
+
+		if ( isset( $item['target'] ) ) {
+			$menu_item_data['menu-item-target'] = '_blank' === (string) $item['target'] ? '_blank' : '';
+		}
+
+		if ( isset( $item['classes'] ) && is_array( $item['classes'] ) ) {
+			$classes = array_filter(
+				array_map(
+					'sanitize_html_class',
+					array_map( 'strval', $item['classes'] )
+				)
+			);
+
+			$menu_item_data['menu-item-classes'] = implode( ' ', $classes );
+		}
+
+		if ( $item_parent_id > 0 ) {
+			$menu_item_data['menu-item-parent-id'] = $item_parent_id;
+		}
+
+		$menu_item_id = wp_update_nav_menu_item( $menu_id, 0, $menu_item_data );
+
+		if ( is_wp_error( $menu_item_id ) || ! is_int( $menu_item_id ) || $menu_item_id <= 0 ) {
+			return is_wp_error( $menu_item_id )
+				? $menu_item_id
+				: new WP_Error(
+					'wordpress_mcp_admin_navigation_item_save_failed',
+					__( 'Failed to save a navigation menu item.', 'wordpress-mcp-admin-tools' )
+				);
+		}
+
+		$created_item_ids[ $index ] = $menu_item_id;
+	}
+
+	return $created_item_ids;
 }
 
 /**

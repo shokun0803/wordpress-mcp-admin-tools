@@ -54,15 +54,22 @@ function wordpress_mcp_admin_render_audit_log_page(): void {
 		<ul class="ul-disc">
 			<li><?php echo esc_html__( 'Create posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Update existing posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Read and update arbitrary WordPress options exposed by core or plugins.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Inspect and update custom post type entries used by plugins for structured settings or content.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Read and update post meta and term meta without adding plugin-specific abilities.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Configure the front page, posts page, and other reading settings.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Inspect the current Site Health results from WordPress.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Apply selected Site Health fixes that are already available from wp-admin.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Read and replace page, post, and custom post type block layouts while keeping them editable in the block editor.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Change page-specific designs by editing files in the active block theme.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Import media from remote URLs, browse the media library, and assign featured images.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Update the site logo and site icon from existing media items.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Create or update classic navigation menus and assign them to theme locations while also inspecting block navigation posts.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Read theme and plugin files before updating them through MCP.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Delete posts or move them to the trash.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Install, create, edit, list, and delete themes.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Install, create, update, activate, deactivate, list, and delete plugins.', 'wordpress-mcp-admin-tools' ); ?></li>
-			<li><?php echo esc_html__( 'Update the site title and tagline.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Update the site title, tagline, and other selected settings.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Review the audit log of MCP-triggered actions.', 'wordpress-mcp-admin-tools' ); ?></li>
 		</ul>
 
@@ -198,9 +205,69 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'capability'  => 'edit_themes',
 		),
 		array(
-			'name'        => 'wordpress-mcp-admin/update-general-settings',
-			'description' => __( 'Update the site title and tagline.', 'wordpress-mcp-admin-tools' ),
+			'name'        => 'wordpress-mcp-admin/import-media-from-url',
+			'description' => __( 'Download a remote file into the media library and optionally update its metadata.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'upload_files',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-media-items',
+			'description' => __( 'Retrieve recent items from the media library.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'upload_files',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/set-featured-image',
+			'description' => __( 'Assign or clear the featured image for a post or page.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'edit_posts',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-site-media',
+			'description' => __( 'Update the site logo and site icon using existing media library items.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'manage_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-general-settings',
+			'description' => __( 'Update the site title, tagline, and reading settings.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'manage_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-options',
+			'description' => __( 'Retrieve arbitrary WordPress option values by option name.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'manage_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-options',
+			'description' => __( 'Update arbitrary WordPress options by option name.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'manage_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-post-type-entries',
+			'description' => __( 'Retrieve entries for an arbitrary post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'post-type-specific edit_posts capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-post-type-entry',
+			'description' => __( 'Update a single entry from any post type, including custom post types used by plugins.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'post-type-specific edit_post capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-object-meta',
+			'description' => __( 'Retrieve meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'post/term-specific edit or manage capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-object-meta',
+			'description' => __( 'Update meta values for a post or term.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'post/term-specific edit or manage capability',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-navigation-menus',
+			'description' => __( 'Retrieve classic navigation menus, assigned locations, and existing block navigation posts.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'edit_theme_options',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/set-navigation-menu',
+			'description' => __( 'Create or update a classic navigation menu, its items, and optional location assignments.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'edit_theme_options',
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/install-theme',

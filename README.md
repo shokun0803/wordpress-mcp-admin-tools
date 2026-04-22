@@ -2,7 +2,7 @@
 
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
-このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、一部の一般設定更新、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
+このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
 
 ## 前提条件
 
@@ -17,6 +17,16 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - 投稿の削除またはゴミ箱移動
 - 固定ページの新規作成
 - 固定ページの更新
+- 任意の WordPress option の読取と更新
+- 任意の custom post type 一覧取得と単体更新
+- post meta / term meta の読取と更新
+- フロントページ、投稿ページ、投稿表示件数の更新
+- リモート URL からのメディア取り込み
+- メディアライブラリ一覧取得
+- アイキャッチ画像の設定と解除
+- サイトロゴとサイトアイコンの更新
+- ナビゲーションメニュー一覧取得
+- ナビゲーションメニュー作成・更新・ロケーション割当
 - WordPress.org からのテーマ追加
 - 新規テーマ雛形の作成
 - インストール済みテーマファイルの編集
@@ -49,12 +59,24 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/get-page-blocks`
 - `wordpress-mcp-admin/get-post-blocks`
 - `wordpress-mcp-admin/edit-page-design`
+- `wordpress-mcp-admin/import-media-from-url`
+- `wordpress-mcp-admin/get-media-items`
+- `wordpress-mcp-admin/set-featured-image`
+- `wordpress-mcp-admin/update-site-media`
+- `wordpress-mcp-admin/get-options`
+- `wordpress-mcp-admin/update-options`
+- `wordpress-mcp-admin/get-post-type-entries`
+- `wordpress-mcp-admin/update-post-type-entry`
+- `wordpress-mcp-admin/get-object-meta`
+- `wordpress-mcp-admin/update-object-meta`
 - `wordpress-mcp-admin/install-theme`
 - `wordpress-mcp-admin/create-theme`
 - `wordpress-mcp-admin/get-theme-file`
 - `wordpress-mcp-admin/edit-theme`
 - `wordpress-mcp-admin/get-themes`
 - `wordpress-mcp-admin/delete-theme`
+- `wordpress-mcp-admin/get-navigation-menus`
+- `wordpress-mcp-admin/set-navigation-menu`
 - `wordpress-mcp-admin/install-plugin`
 - `wordpress-mcp-admin/create-plugin`
 - `wordpress-mcp-admin/get-plugin-file`
@@ -212,6 +234,78 @@ cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-de
 <!-- wp:post-content /--></main>
 <!-- /wp:group -->
 <!-- wp:template-part {\"slug\":\"footer\",\"tagName\":\"footer\"} /-->"}}}}
+EOF
+```
+
+### フロントページと投稿ページ設定の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-general-settings","parameters":{"show_on_front":"page","page_on_front":123,"page_for_posts":124,"posts_per_page":10}}}}
+EOF
+```
+
+### 任意 option 読取の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-options","parameters":{"names":["blogname","stylesheet","wpseo"]}}}}
+EOF
+```
+
+### 任意 option 更新の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-options","parameters":{"options":[{"name":"blogname","value":"MCP Corporate Site"},{"name":"my_plugin_settings","value":{"headline":"Hello","enabled":true}}]}}}}
+EOF
+```
+
+### custom post type 一覧取得の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-post-type-entries","parameters":{"post_type":"news","per_page":10,"page":1}}}}
+EOF
+```
+
+### custom post type 単体更新の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-post-type-entry","parameters":{"post_id":456,"post_type":"news","title":"Updated News","status":"publish"}}}}
+EOF
+```
+
+### post meta 読取の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-object-meta","parameters":{"object_type":"post","object_id":456,"keys":["_thumbnail_id","custom_layout"]}}}}
+EOF
+```
+
+### term meta 更新の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-object-meta","parameters":{"object_type":"term","object_id":12,"entries":[{"key":"banner_title","value":"News Category"},{"key":"accent_color","value":"#0f766e"}]}}}}
+EOF
+```
+
+### メディア取り込みの例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/import-media-from-url","parameters":{"source_url":"https://example.com/hero.jpg","title":"Hero Image","alt_text":"Office building exterior"}}}}
+EOF
+```
+
+### ナビゲーションメニュー更新の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/set-navigation-menu","parameters":{"name":"Primary Navigation","locations":["primary"],"items":[{"title":"Home","type":"page","object_id":123},{"title":"News","type":"page","object_id":124},{"title":"Contact","type":"page","object_id":125}]}}}}
 EOF
 ```
 
