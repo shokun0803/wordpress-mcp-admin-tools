@@ -3,7 +3,7 @@
  * Plugin Name: MCP Admin Tools for WordPress
  * Plugin URI: https://example.com/
  * Description: Registers abilities for managing WordPress content and viewing audit logs from MCP clients.
- * Version: 0.5.0
+ * Version: 0.6.0
  * Author: shokun0803, GitHub Copilot
  * License: GPL-2.0-or-later
  * Text Domain: wordpress-mcp-admin-tools

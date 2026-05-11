@@ -181,6 +181,11 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'capability'  => 'moderate_comments',
 		),
 		array(
+			'name'        => 'wordpress-mcp-admin/delete-comments',
+			'description' => __( 'Delete multiple comments in one request after review.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'moderate_comments',
+		),
+		array(
 			'name'        => 'wordpress-mcp-admin/create-page',
 			'description' => __( 'Create a new page with the provided content.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'edit_pages',

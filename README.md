@@ -4,7 +4,7 @@
 
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
-このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、投稿ごとのコメント許可設定変更、コメント一覧取得とスパムコメント確認および削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除・有効化・無効化・自動更新切替、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、Contact Form 7 / WPForms Lite 用の専用フォーム操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
+このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、投稿ごとのコメント許可設定変更、コメント一覧取得とスパムコメント確認および削除・一括削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除・有効化・無効化・自動更新切替、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、Contact Form 7 / WPForms Lite 用の専用フォーム操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
 
 ## 前提条件
 
@@ -13,6 +13,12 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - Ability を実行するユーザーに適切な権限があること
 
 ## リリースノート
+
+### 0.6.0
+
+- コメントの一括削除 Ability `wordpress-mcp-admin/delete-comments` を追加
+- 最大 100 件までのレビュー済みコメントを 1 回のリクエストで削除またはゴミ箱移動できるように変更
+- README にコメント一括削除 Ability の説明と利用例を追記
 
 ### 0.5.0
 
@@ -38,6 +44,7 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - コメント一覧取得
 - コメントの承認、保留、スパム化、ゴミ箱移動
 - コメントの削除
+- コメントの一括削除
 - 任意の WordPress option の読取と更新
 - 任意の custom post type 一覧取得と単体更新
 - post meta / term meta の読取と更新
@@ -81,6 +88,7 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/get-comments`
 - `wordpress-mcp-admin/update-comment-status`
 - `wordpress-mcp-admin/delete-comment`
+- `wordpress-mcp-admin/delete-comments`
 - `wordpress-mcp-admin/create-page`
 - `wordpress-mcp-admin/update-page`
 - `wordpress-mcp-admin/edit-page-blocks`
@@ -177,6 +185,14 @@ EOF
 ```bash
 cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/delete-comment","parameters":{"comment_id":321,"force":true}}}}
+EOF
+```
+
+### スパムコメント一括削除の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/delete-comments","parameters":{"comment_ids":[321,322,323],"force":true}}}}
 EOF
 ```
 

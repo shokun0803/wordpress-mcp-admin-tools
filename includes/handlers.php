@@ -1223,6 +1223,99 @@ function wordpress_mcp_admin_execute_delete_comment( array $input = array() ) {
 }
 
 /**
+ * コメントを一括削除します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_delete_comments( array $input = array() ) {
+	$raw_comment_ids = isset( $input['comment_ids'] ) && is_array( $input['comment_ids'] ) ? $input['comment_ids'] : array();
+	$force_delete    = ! empty( $input['force'] );
+	$comment_ids     = array_values( array_unique( array_filter( array_map( 'intval', $raw_comment_ids ), static fn( int $comment_id ): bool => $comment_id > 0 ) ) );
+	$input_summary   = wordpress_mcp_admin_build_input_summary(
+		array(
+			'comment_ids' => $comment_ids,
+			'force'       => $force_delete,
+		),
+		array( 'force' )
+	);
+
+	if ( empty( $comment_ids ) ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_ids',
+			__( 'At least one valid comment ID is required.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments', false, 'comment', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	if ( count( $comment_ids ) > 100 ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_too_many_comment_ids',
+			__( 'No more than 100 comments can be deleted at once.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments', false, 'comment', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$results       = array();
+	$deleted_count = 0;
+	$failed_count  = 0;
+
+	foreach ( $comment_ids as $comment_id ) {
+		$comment = get_comment( $comment_id );
+
+		if ( ! $comment instanceof WP_Comment ) {
+			++$failed_count;
+			$results[] = array(
+				'comment_id'      => $comment_id,
+				'deleted'         => false,
+				'previous_status' => '',
+				'error'           => __( 'The specified comment could not be found.', 'wordpress-mcp-admin-tools' ),
+			);
+
+			continue;
+		}
+
+		$previous_status = (string) wp_get_comment_status( $comment );
+		$deleted         = wp_delete_comment( $comment_id, $force_delete );
+
+		if ( ! $deleted ) {
+			++$failed_count;
+			$results[] = array(
+				'comment_id'      => $comment_id,
+				'deleted'         => false,
+				'previous_status' => $previous_status,
+				'error'           => __( 'Failed to delete the comment.', 'wordpress-mcp-admin-tools' ),
+			);
+
+			continue;
+		}
+
+		++$deleted_count;
+		$results[] = array(
+			'comment_id'      => $comment_id,
+			'deleted'         => true,
+			'previous_status' => $previous_status,
+			'error'           => '',
+		);
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments', 0 === $failed_count, 'comment', 0, $input_summary, $failed_count > 0 ? 'wordpress_mcp_admin_partial_comment_delete' : '', $failed_count > 0 ? __( 'Some comments could not be deleted.', 'wordpress-mcp-admin-tools' ) : '' );
+
+	return array(
+		'deleted_count' => $deleted_count,
+		'failed_count'  => $failed_count,
+		'force'         => $force_delete,
+		'results'       => $results,
+	);
+}
+
+/**
  * 投稿またはタームのメタデータを取得します。
  *
  * @param array<string, mixed> $input 入力値。

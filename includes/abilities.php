@@ -492,6 +492,65 @@ function wordpress_mcp_admin_register_abilities(): void {
 	);
 
 	wp_register_ability(
+		'wordpress-mcp-admin/delete-comments',
+		array(
+			'label'               => __( 'Delete Comments', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Delete multiple comments in a single request after they have been reviewed.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_delete_comments',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_comments',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_ids' => array(
+						'type'        => 'array',
+						'description' => __( 'Comment IDs to delete. Up to 100 comments can be removed at once.', 'wordpress-mcp-admin-tools' ),
+						'items'       => array(
+							'type' => 'integer',
+						),
+					),
+					'force' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Permanently delete when true. Otherwise the comments are trashed when supported.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required' => array( 'comment_ids' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'deleted_count' => array( 'type' => 'integer' ),
+					'failed_count' => array( 'type' => 'integer' ),
+					'force' => array( 'type' => 'boolean' ),
+					'results' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'comment_id' => array( 'type' => 'integer' ),
+								'deleted' => array( 'type' => 'boolean' ),
+								'previous_status' => array( 'type' => 'string' ),
+								'error' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => true,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
 		'wordpress-mcp-admin/update-page',
 		array(
 			'label'               => __( 'Update Page', 'wordpress-mcp-admin-tools' ),
