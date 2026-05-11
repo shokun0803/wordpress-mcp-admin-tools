@@ -4,7 +4,7 @@
 
 MCP クライアントから WordPress の管理操作を行うための Ability を登録するプラグインです。
 
-このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、Contact Form 7 / WPForms Lite 用の専用フォーム操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
+このプラグインは WordPress の Abilities API と WordPress の MCP Adapter を前提に動作します。投稿や固定ページの作成・更新・削除、投稿ごとのコメント許可設定変更、コメント一覧取得とスパムコメント確認および削除、テーマの追加・作成・編集・一覧取得・削除、プラグインの追加・作成・更新・一覧取得・削除、フロントページ設定を含む一部の一般設定更新、任意 option や custom post type や post meta / term meta の汎用操作、メディア操作、ナビゲーションメニュー操作、Contact Form 7 / WPForms Lite 用の専用フォーム操作、サイトヘルス状態の取得、管理画面で実行可能な一部のサイトヘルス修正、実行監査ログの取得を MCP 経由で利用できます。
 
 ## 前提条件
 
@@ -16,9 +16,14 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 
 - 投稿の新規作成
 - 投稿の更新
+- 投稿ごとのコメント受付とピンバック受付の設定変更
 - 投稿の削除またはゴミ箱移動
 - 固定ページの新規作成
 - 固定ページの更新
+- 固定ページごとのコメント受付とピンバック受付の設定変更
+- コメント一覧取得
+- コメントの承認、保留、スパム化、ゴミ箱移動
+- コメントの削除
 - 任意の WordPress option の読取と更新
 - 任意の custom post type 一覧取得と単体更新
 - post meta / term meta の読取と更新
@@ -57,6 +62,9 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - `wordpress-mcp-admin/create-post`
 - `wordpress-mcp-admin/update-post`
 - `wordpress-mcp-admin/delete-post`
+- `wordpress-mcp-admin/get-comments`
+- `wordpress-mcp-admin/update-comment-status`
+- `wordpress-mcp-admin/delete-comment`
 - `wordpress-mcp-admin/create-page`
 - `wordpress-mcp-admin/update-page`
 - `wordpress-mcp-admin/edit-page-blocks`
@@ -137,6 +145,30 @@ EOF
 ```bash
 cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
 {"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-audit-log","parameters":{"limit":10}}}}
+EOF
+```
+
+### スパムコメント確認の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/get-comments","parameters":{"status":"spam","per_page":20,"include_content":true}}}}
+EOF
+```
+
+### スパムコメント削除の例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/delete-comment","parameters":{"comment_id":321,"force":true}}}}
+EOF
+```
+
+### 投稿のコメント受付を閉じる例
+
+```bash
+cat <<'EOF' | wp mcp-adapter serve --allow-root --user=1 --server=mcp-adapter-default-server --path=/var/www/html
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mcp-adapter-execute-ability","arguments":{"ability_name":"wordpress-mcp-admin/update-post","parameters":{"post_id":456,"comment_status":"closed","ping_status":"closed"}}}}
 EOF
 ```
 

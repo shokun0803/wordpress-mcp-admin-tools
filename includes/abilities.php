@@ -35,6 +35,16 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'enum'        => array( 'draft', 'pending', 'private', 'publish' ),
 						'description' => __( 'Page status.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'Whether comments are open for the page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'Whether pingbacks and trackbacks are open for the page.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 				'required'   => array( 'title' ),
 			),
@@ -48,6 +58,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'status'    => array(
 						'type'        => 'string',
 						'description' => __( 'Saved page status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Saved page comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'description' => __( 'Saved page ping status.', 'wordpress-mcp-admin-tools' ),
 					),
 					'edit_link' => array(
 						'type'        => 'string',
@@ -101,6 +119,16 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'string',
 						'description' => __( 'Post type. Defaults to post.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'Whether comments are open for the post.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'Whether pingbacks and trackbacks are open for the post.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 				'required'   => array( 'title' ),
 			),
@@ -114,6 +142,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'status'    => array(
 						'type'        => 'string',
 						'description' => __( 'Saved post status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Saved post comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'description' => __( 'Saved post ping status.', 'wordpress-mcp-admin-tools' ),
 					),
 					'edit_link' => array(
 						'type'        => 'string',
@@ -167,6 +203,16 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'enum'        => array( 'draft', 'pending', 'private', 'publish' ),
 						'description' => __( 'New post status.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New comment status for the post.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New ping status for the post.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 				'required'   => array( 'post_id' ),
 			),
@@ -180,6 +226,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'status'    => array(
 						'type'        => 'string',
 						'description' => __( 'Updated post status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Updated post comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'description' => __( 'Updated post ping status.', 'wordpress-mcp-admin-tools' ),
 					),
 					'edit_link' => array(
 						'type'        => 'string',
@@ -255,6 +309,189 @@ function wordpress_mcp_admin_register_abilities(): void {
 	);
 
 	wp_register_ability(
+		'wordpress-mcp-admin/get-comments',
+		array(
+			'label'               => __( 'Get Comments', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Retrieve comments with optional filtering so spam comments can be reviewed before moderation or deletion.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_get_comments',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_comments',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'post_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional post ID to limit comments to a single post or page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'status'  => array(
+						'type'        => 'string',
+						'enum'        => array( 'all', 'approve', 'hold', 'spam', 'trash' ),
+						'description' => __( 'Comment status filter. Use spam to review spam comments.', 'wordpress-mcp-admin-tools' ),
+					),
+					'search'  => array(
+						'type'        => 'string',
+						'description' => __( 'Optional search term matched against comment content and author fields.', 'wordpress-mcp-admin-tools' ),
+					),
+					'per_page' => array(
+						'type'        => 'integer',
+						'description' => __( 'Number of comments to return. Between 1 and 50.', 'wordpress-mcp-admin-tools' ),
+					),
+					'page' => array(
+						'type'        => 'integer',
+						'description' => __( 'Results page number.', 'wordpress-mcp-admin-tools' ),
+					),
+					'include_content' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Include full comment content when true. A short preview is always returned.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comments' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'comment_id'      => array( 'type' => 'integer' ),
+								'post_id'         => array( 'type' => 'integer' ),
+								'post_type'       => array( 'type' => 'string' ),
+								'post_title'      => array( 'type' => 'string' ),
+								'author_name'     => array( 'type' => 'string' ),
+								'author_email'    => array( 'type' => 'string' ),
+								'author_url'      => array( 'type' => 'string' ),
+								'status'          => array( 'type' => 'string' ),
+								'date_gmt'        => array( 'type' => 'string' ),
+								'content_preview' => array( 'type' => 'string' ),
+								'content'         => array( 'type' => 'string' ),
+								'edit_link'       => array( 'type' => 'string' ),
+							),
+						),
+					),
+					'post_id' => array( 'type' => 'integer' ),
+					'status' => array( 'type' => 'string' ),
+					'page' => array( 'type' => 'integer' ),
+					'per_page' => array( 'type' => 'integer' ),
+					'found_comments' => array( 'type' => 'integer' ),
+					'max_num_pages' => array( 'type' => 'integer' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => true,
+					'destructive' => false,
+					'idempotent' => true,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/update-comment-status',
+		array(
+			'label'               => __( 'Update Comment Status', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Approve, hold, mark as spam, or trash a comment.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_update_comment_status',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_comments',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Comment ID to update.', 'wordpress-mcp-admin-tools' ),
+					),
+					'status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'approve', 'hold', 'spam', 'trash' ),
+						'description' => __( 'New moderation status for the comment.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required' => array( 'comment_id', 'status' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_id'      => array( 'type' => 'integer' ),
+					'post_id'         => array( 'type' => 'integer' ),
+					'post_type'       => array( 'type' => 'string' ),
+					'post_title'      => array( 'type' => 'string' ),
+					'author_name'     => array( 'type' => 'string' ),
+					'author_email'    => array( 'type' => 'string' ),
+					'author_url'      => array( 'type' => 'string' ),
+					'status'          => array( 'type' => 'string' ),
+					'date_gmt'        => array( 'type' => 'string' ),
+					'content_preview' => array( 'type' => 'string' ),
+					'content'         => array( 'type' => 'string' ),
+					'edit_link'       => array( 'type' => 'string' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/delete-comment',
+		array(
+			'label'               => __( 'Delete Comment', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Delete a comment or move it to the trash after review.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_delete_comment',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_comments',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Comment ID to delete.', 'wordpress-mcp-admin-tools' ),
+					),
+					'force' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Permanently delete when true. Otherwise the comment is trashed when supported.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+				'required' => array( 'comment_id' ),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_id' => array( 'type' => 'integer' ),
+					'post_id' => array( 'type' => 'integer' ),
+					'deleted' => array( 'type' => 'boolean' ),
+					'previous_status' => array( 'type' => 'string' ),
+					'force' => array( 'type' => 'boolean' ),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => true,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
 		'wordpress-mcp-admin/update-page',
 		array(
 			'label'               => __( 'Update Page', 'wordpress-mcp-admin-tools' ),
@@ -286,6 +523,16 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'enum'        => array( 'draft', 'pending', 'private', 'publish' ),
 						'description' => __( 'New page status.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New comment status for the page.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New ping status for the page.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 				'required'   => array( 'page_id' ),
 			),
@@ -299,6 +546,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'status'    => array(
 						'type'        => 'string',
 						'description' => __( 'Updated page status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Updated page comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status'    => array(
+						'type'        => 'string',
+						'description' => __( 'Updated page ping status.', 'wordpress-mcp-admin-tools' ),
 					),
 					'edit_link' => array(
 						'type'        => 'string',
@@ -459,6 +714,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'string',
 						'description' => __( 'Current page status.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Current page comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Current page ping status.', 'wordpress-mcp-admin-tools' ),
+					),
 					'block_content' => array(
 						'type'        => 'string',
 						'description' => __( 'Current page block markup.', 'wordpress-mcp-admin-tools' ),
@@ -523,6 +786,14 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'status'        => array(
 						'type'        => 'string',
 						'description' => __( 'Current post status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Current post comment status.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status' => array(
+						'type'        => 'string',
+						'description' => __( 'Current post ping status.', 'wordpress-mcp-admin-tools' ),
 					),
 					'block_content' => array(
 						'type'        => 'string',
@@ -1221,6 +1492,8 @@ function wordpress_mcp_admin_register_abilities(): void {
 								'slug'       => array( 'type' => 'string' ),
 								'status'     => array( 'type' => 'string' ),
 								'excerpt'    => array( 'type' => 'string' ),
+								'comment_status' => array( 'type' => 'string' ),
+								'ping_status' => array( 'type' => 'string' ),
 								'menu_order' => array( 'type' => 'integer' ),
 								'content'    => array(
 									'type'        => 'string',
@@ -1289,6 +1562,16 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'integer',
 						'description' => __( 'New menu order value.', 'wordpress-mcp-admin-tools' ),
 					),
+					'comment_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New comment status for the entry.', 'wordpress-mcp-admin-tools' ),
+					),
+					'ping_status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'open', 'closed' ),
+						'description' => __( 'New ping status for the entry.', 'wordpress-mcp-admin-tools' ),
+					),
 				),
 				'required'   => array( 'post_id' ),
 			),
@@ -1301,6 +1584,8 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'slug'       => array( 'type' => 'string' ),
 					'status'     => array( 'type' => 'string' ),
 					'excerpt'    => array( 'type' => 'string' ),
+					'comment_status' => array( 'type' => 'string' ),
+					'ping_status' => array( 'type' => 'string' ),
 					'menu_order' => array( 'type' => 'integer' ),
 					'content'    => array(
 						'type'        => 'string',

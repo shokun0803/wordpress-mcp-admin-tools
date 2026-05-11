@@ -299,6 +299,33 @@ function wordpress_mcp_admin_can_manage_object_meta( array $input = array() ): b
 }
 
 /**
+ * コメントを操作できるかを確認します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return bool
+ */
+function wordpress_mcp_admin_can_manage_comments( array $input = array() ): bool {
+	$comment_id = isset( $input['comment_id'] ) ? (int) $input['comment_id'] : 0;
+	$post_id    = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+
+	if ( $comment_id > 0 ) {
+		$comment = get_comment( $comment_id );
+
+		if ( $comment instanceof WP_Comment ) {
+			return current_user_can( 'moderate_comments' )
+				|| current_user_can( 'edit_comment', $comment_id )
+				|| current_user_can( 'edit_post', (int) $comment->comment_post_ID );
+		}
+	}
+
+	if ( $post_id > 0 ) {
+		return current_user_can( 'moderate_comments' ) || current_user_can( 'edit_post', $post_id );
+	}
+
+	return current_user_can( 'moderate_comments' );
+}
+
+/**
  * JSON 由来の入力値を再帰的に正規化します。
  *
  * @param mixed $value 入力値。
@@ -361,6 +388,115 @@ function wordpress_mcp_admin_normalize_meta_key( $value ) {
 }
 
 /**
+ * Discussion 設定の open/closed 値を検証します。
+ *
+ * @param mixed  $value 入力値。
+ * @param string $field_name フィールド名。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_discussion_status( $value, string $field_name ) {
+	$status = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+
+	if ( ! in_array( $status, array( 'open', 'closed' ), true ) ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_discussion_status',
+			sprintf(
+				/* translators: %s: field name */
+				__( '%s must be either open or closed.', 'wordpress-mcp-admin-tools' ),
+				$field_name
+			)
+		);
+	}
+
+	return $status;
+}
+
+/**
+ * コメント一覧取得用のステータス値を検証します。
+ *
+ * @param mixed $value 入力値。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_comment_query_status( $value ) {
+	$status = is_scalar( $value ) ? sanitize_key( (string) $value ) : 'all';
+	$map    = array(
+		'approved'   => 'approve',
+		'unapproved' => 'hold',
+	);
+
+	if ( isset( $map[ $status ] ) ) {
+		$status = $map[ $status ];
+	}
+
+	if ( ! in_array( $status, array( 'all', 'approve', 'hold', 'spam', 'trash' ), true ) ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_status',
+			__( 'status must be one of all, approve, hold, spam, or trash.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $status;
+}
+
+/**
+ * コメント更新用のステータス値を検証します。
+ *
+ * @param mixed $value 入力値。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_comment_moderation_status( $value ) {
+	$status = is_scalar( $value ) ? sanitize_key( (string) $value ) : '';
+	$map    = array(
+		'approved'   => 'approve',
+		'unapproved' => 'hold',
+	);
+
+	if ( isset( $map[ $status ] ) ) {
+		$status = $map[ $status ];
+	}
+
+	if ( ! in_array( $status, array( 'approve', 'hold', 'spam', 'trash' ), true ) ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_moderation_status',
+			__( 'status must be one of approve, hold, spam, or trash.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $status;
+}
+
+/**
+ * 投稿更新配列へ discussion 設定を適用します。
+ *
+ * @param array<string, mixed> $post_data 更新配列。
+ * @param array<string, mixed> $input 入力値。
+ * @return true|WP_Error
+ */
+function wordpress_mcp_admin_apply_discussion_input_to_post_data( array &$post_data, array $input ) {
+	if ( array_key_exists( 'comment_status', $input ) ) {
+		$comment_status = wordpress_mcp_admin_normalize_discussion_status( $input['comment_status'], 'comment_status' );
+
+		if ( is_wp_error( $comment_status ) ) {
+			return $comment_status;
+		}
+
+		$post_data['comment_status'] = $comment_status;
+	}
+
+	if ( array_key_exists( 'ping_status', $input ) ) {
+		$ping_status = wordpress_mcp_admin_normalize_discussion_status( $input['ping_status'], 'ping_status' );
+
+		if ( is_wp_error( $ping_status ) ) {
+			return $ping_status;
+		}
+
+		$post_data['ping_status'] = $ping_status;
+	}
+
+	return true;
+}
+
+/**
  * 監査ログ向けに文字列配列を要約します。
  *
  * @param string              $label ラベル。
@@ -413,12 +549,49 @@ function wordpress_mcp_admin_format_post_type_entry_record( WP_Post $post, bool 
 		'slug'       => (string) $post->post_name,
 		'status'     => (string) get_post_status( $post ),
 		'excerpt'    => (string) $post->post_excerpt,
+		'comment_status' => (string) $post->comment_status,
+		'ping_status'    => (string) $post->ping_status,
 		'menu_order' => (int) $post->menu_order,
 		'edit_link'  => (string) get_edit_post_link( $post->ID, 'raw' ),
 	);
 
 	if ( $include_content ) {
 		$record['content'] = (string) $post->post_content;
+	}
+
+	return $record;
+}
+
+/**
+ * コメント情報を返却用配列に整形します。
+ *
+ * @param WP_Comment $comment コメントオブジェクト。
+ * @param bool       $include_content content を含める場合は true。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_format_comment_record( WP_Comment $comment, bool $include_content = false ): array {
+	$post            = get_post( (int) $comment->comment_post_ID );
+	$content         = (string) $comment->comment_content;
+	$content_preview = function_exists( 'mb_substr' )
+		? mb_substr( wp_strip_all_tags( $content ), 0, 280 )
+		: substr( wp_strip_all_tags( $content ), 0, 280 );
+
+	$record = array(
+		'comment_id'      => (int) $comment->comment_ID,
+		'post_id'         => (int) $comment->comment_post_ID,
+		'post_type'       => $post instanceof WP_Post ? (string) $post->post_type : '',
+		'post_title'      => $post instanceof WP_Post ? (string) get_the_title( $post ) : '',
+		'author_name'     => (string) $comment->comment_author,
+		'author_email'    => (string) $comment->comment_author_email,
+		'author_url'      => (string) $comment->comment_author_url,
+		'status'          => (string) wp_get_comment_status( $comment ),
+		'date_gmt'        => (string) $comment->comment_date_gmt,
+		'content_preview' => $content_preview,
+		'edit_link'       => (string) get_edit_comment_link( (int) $comment->comment_ID, 'raw' ),
+	);
+
+	if ( $include_content ) {
+		$record['content'] = $content;
 	}
 
 	return $record;
@@ -1872,6 +2045,8 @@ function wordpress_mcp_admin_build_post_block_response( WP_Post $post, string $i
 		'post_type'     => (string) $post->post_type,
 		'title'         => (string) get_the_title( $post ),
 		'status'        => (string) get_post_status( $post ),
+		'comment_status' => (string) $post->comment_status,
+		'ping_status'    => (string) $post->ping_status,
 		'block_content' => (string) $post->post_content,
 		'parsed_blocks' => wordpress_mcp_admin_normalize_parsed_blocks( parse_blocks( (string) $post->post_content ) ),
 		'edit_link'     => (string) get_edit_post_link( $post->ID, 'raw' ),

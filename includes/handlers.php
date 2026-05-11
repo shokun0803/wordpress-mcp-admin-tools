@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 function wordpress_mcp_admin_execute_create_post( array $input = array() ) {
 	$title         = isset( $input['title'] ) ? sanitize_text_field( wp_unslash( (string) $input['title'] ) ) : '';
-	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'title', 'status', 'type' ) );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'title', 'status', 'type', 'comment_status', 'ping_status' ) );
 
 	if ( '' === $title ) {
 		$error = new WP_Error(
@@ -41,16 +41,23 @@ function wordpress_mcp_admin_execute_create_post( array $input = array() ) {
 		return $error;
 	}
 
-	$post_id = wp_insert_post(
-		array(
-			'post_title'   => $title,
-			'post_content' => isset( $input['content'] ) ? wp_kses_post( wp_unslash( (string) $input['content'] ) ) : '',
-			'post_excerpt' => isset( $input['excerpt'] ) ? sanitize_textarea_field( wp_unslash( (string) $input['excerpt'] ) ) : '',
-			'post_status'  => $status,
-			'post_type'    => $post_type,
-		),
-		true
+	$post_data = array(
+		'post_title'   => $title,
+		'post_content' => isset( $input['content'] ) ? wp_kses_post( wp_unslash( (string) $input['content'] ) ) : '',
+		'post_excerpt' => isset( $input['excerpt'] ) ? sanitize_textarea_field( wp_unslash( (string) $input['excerpt'] ) ) : '',
+		'post_status'  => $status,
+		'post_type'    => $post_type,
 	);
+
+	$discussion_result = wordpress_mcp_admin_apply_discussion_input_to_post_data( $post_data, $input );
+
+	if ( is_wp_error( $discussion_result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/create-post', false, 'post', 0, $input_summary, $discussion_result->get_error_code(), $discussion_result->get_error_message() );
+
+		return $discussion_result;
+	}
+
+	$post_id = wp_insert_post( $post_data, true );
 
 	if ( is_wp_error( $post_id ) ) {
 		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/create-post', false, 'post', 0, $input_summary, $post_id->get_error_code(), $post_id->get_error_message() );
@@ -63,6 +70,8 @@ function wordpress_mcp_admin_execute_create_post( array $input = array() ) {
 	return array(
 		'post_id'   => (int) $post_id,
 		'status'    => (string) get_post_status( $post_id ),
+		'comment_status' => (string) get_post_field( 'comment_status', $post_id ),
+		'ping_status'    => (string) get_post_field( 'ping_status', $post_id ),
 		'edit_link' => (string) get_edit_post_link( $post_id, 'raw' ),
 	);
 }
@@ -75,7 +84,7 @@ function wordpress_mcp_admin_execute_create_post( array $input = array() ) {
  */
 function wordpress_mcp_admin_execute_create_page( array $input = array() ) {
 	$title         = isset( $input['title'] ) ? sanitize_text_field( wp_unslash( (string) $input['title'] ) ) : '';
-	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'title', 'status' ) );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'title', 'status', 'comment_status', 'ping_status' ) );
 
 	if ( '' === $title ) {
 		$error = new WP_Error(
@@ -90,16 +99,23 @@ function wordpress_mcp_admin_execute_create_page( array $input = array() ) {
 
 	$status = isset( $input['status'] ) ? sanitize_key( (string) $input['status'] ) : 'draft';
 
-	$page_id = wp_insert_post(
-		array(
-			'post_title'   => $title,
-			'post_content' => isset( $input['content'] ) ? wp_kses_post( wp_unslash( (string) $input['content'] ) ) : '',
-			'post_excerpt' => isset( $input['excerpt'] ) ? sanitize_textarea_field( wp_unslash( (string) $input['excerpt'] ) ) : '',
-			'post_status'  => $status,
-			'post_type'    => 'page',
-		),
-		true
+	$page_data = array(
+		'post_title'   => $title,
+		'post_content' => isset( $input['content'] ) ? wp_kses_post( wp_unslash( (string) $input['content'] ) ) : '',
+		'post_excerpt' => isset( $input['excerpt'] ) ? sanitize_textarea_field( wp_unslash( (string) $input['excerpt'] ) ) : '',
+		'post_status'  => $status,
+		'post_type'    => 'page',
 	);
+
+	$discussion_result = wordpress_mcp_admin_apply_discussion_input_to_post_data( $page_data, $input );
+
+	if ( is_wp_error( $discussion_result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/create-page', false, 'page', 0, $input_summary, $discussion_result->get_error_code(), $discussion_result->get_error_message() );
+
+		return $discussion_result;
+	}
+
+	$page_id = wp_insert_post( $page_data, true );
 
 	if ( is_wp_error( $page_id ) ) {
 		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/create-page', false, 'page', 0, $input_summary, $page_id->get_error_code(), $page_id->get_error_message() );
@@ -112,6 +128,8 @@ function wordpress_mcp_admin_execute_create_page( array $input = array() ) {
 	return array(
 		'page_id'   => (int) $page_id,
 		'status'    => (string) get_post_status( $page_id ),
+		'comment_status' => (string) get_post_field( 'comment_status', $page_id ),
+		'ping_status'    => (string) get_post_field( 'ping_status', $page_id ),
 		'edit_link' => (string) get_edit_post_link( $page_id, 'raw' ),
 	);
 }
@@ -124,7 +142,7 @@ function wordpress_mcp_admin_execute_create_page( array $input = array() ) {
  */
 function wordpress_mcp_admin_execute_update_post( array $input = array() ) {
 	$post_id       = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
-	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'title', 'status' ) );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'title', 'status', 'comment_status', 'ping_status' ) );
 
 	if ( $post_id <= 0 ) {
 		$error = new WP_Error(
@@ -170,6 +188,14 @@ function wordpress_mcp_admin_execute_update_post( array $input = array() ) {
 		$post_data['post_status'] = sanitize_key( (string) $input['status'] );
 	}
 
+	$discussion_result = wordpress_mcp_admin_apply_discussion_input_to_post_data( $post_data, $input );
+
+	if ( is_wp_error( $discussion_result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-post', false, 'post', $post_id, $input_summary, $discussion_result->get_error_code(), $discussion_result->get_error_message() );
+
+		return $discussion_result;
+	}
+
 	$updated_post_id = wp_update_post( $post_data, true );
 
 	if ( is_wp_error( $updated_post_id ) ) {
@@ -183,6 +209,8 @@ function wordpress_mcp_admin_execute_update_post( array $input = array() ) {
 	return array(
 		'post_id'   => (int) $updated_post_id,
 		'status'    => (string) get_post_status( $updated_post_id ),
+		'comment_status' => (string) get_post_field( 'comment_status', $updated_post_id ),
+		'ping_status'    => (string) get_post_field( 'ping_status', $updated_post_id ),
 		'edit_link' => (string) get_edit_post_link( $updated_post_id, 'raw' ),
 	);
 }
@@ -253,7 +281,7 @@ function wordpress_mcp_admin_execute_delete_post( array $input = array() ) {
  */
 function wordpress_mcp_admin_execute_update_page( array $input = array() ) {
 	$page_id       = isset( $input['page_id'] ) ? (int) $input['page_id'] : 0;
-	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'page_id', 'title', 'status' ) );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'page_id', 'title', 'status', 'comment_status', 'ping_status' ) );
 
 	if ( $page_id <= 0 ) {
 		$error = new WP_Error(
@@ -300,6 +328,14 @@ function wordpress_mcp_admin_execute_update_page( array $input = array() ) {
 		$page_data['post_status'] = sanitize_key( (string) $input['status'] );
 	}
 
+	$discussion_result = wordpress_mcp_admin_apply_discussion_input_to_post_data( $page_data, $input );
+
+	if ( is_wp_error( $discussion_result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-page', false, 'page', $page_id, $input_summary, $discussion_result->get_error_code(), $discussion_result->get_error_message() );
+
+		return $discussion_result;
+	}
+
 	$updated_page_id = wp_update_post( $page_data, true );
 
 	if ( is_wp_error( $updated_page_id ) ) {
@@ -313,6 +349,8 @@ function wordpress_mcp_admin_execute_update_page( array $input = array() ) {
 	return array(
 		'page_id'   => (int) $updated_page_id,
 		'status'    => (string) get_post_status( $updated_page_id ),
+		'comment_status' => (string) get_post_field( 'comment_status', $updated_page_id ),
+		'ping_status'    => (string) get_post_field( 'ping_status', $updated_page_id ),
 		'edit_link' => (string) get_edit_post_link( $updated_page_id, 'raw' ),
 	);
 }
@@ -871,7 +909,7 @@ function wordpress_mcp_admin_execute_get_post_type_entries( array $input = array
 function wordpress_mcp_admin_execute_update_post_type_entry( array $input = array() ) {
 	$post_id       = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
 	$expected_type = isset( $input['post_type'] ) ? sanitize_key( (string) $input['post_type'] ) : '';
-	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'post_type', 'title', 'status', 'slug', 'menu_order' ) );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'post_type', 'title', 'status', 'slug', 'menu_order', 'comment_status', 'ping_status' ) );
 
 	if ( $post_id <= 0 ) {
 		$error = new WP_Error(
@@ -939,6 +977,14 @@ function wordpress_mcp_admin_execute_update_post_type_entry( array $input = arra
 		$post_data['menu_order'] = (int) $input['menu_order'];
 	}
 
+	$discussion_result = wordpress_mcp_admin_apply_discussion_input_to_post_data( $post_data, $input );
+
+	if ( is_wp_error( $discussion_result ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-post-type-entry', false, 'post', $post_id, $input_summary, $discussion_result->get_error_code(), $discussion_result->get_error_message() );
+
+		return $discussion_result;
+	}
+
 	$updated_post_id = wp_update_post( $post_data, true );
 
 	if ( is_wp_error( $updated_post_id ) ) {
@@ -963,6 +1009,217 @@ function wordpress_mcp_admin_execute_update_post_type_entry( array $input = arra
 	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-post-type-entry', true, 'post', (int) $updated_post_id, $input_summary );
 
 	return wordpress_mcp_admin_format_post_type_entry_record( $updated_post, array_key_exists( 'content', $input ) );
+}
+
+/**
+ * コメントを一覧取得します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_get_comments( array $input = array() ) {
+	$post_id         = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+	$search          = isset( $input['search'] ) ? sanitize_text_field( wp_unslash( (string) $input['search'] ) ) : '';
+	$per_page        = isset( $input['per_page'] ) ? max( 1, min( 50, (int) $input['per_page'] ) ) : 20;
+	$page            = isset( $input['page'] ) ? max( 1, (int) $input['page'] ) : 1;
+	$include_content = ! empty( $input['include_content'] );
+	$input_summary   = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'status', 'search', 'per_page', 'page' ) );
+	$status          = wordpress_mcp_admin_normalize_comment_query_status( $input['status'] ?? 'all' );
+
+	if ( is_wp_error( $status ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-comments', false, 'comment', 0, $input_summary, $status->get_error_code(), $status->get_error_message() );
+
+		return $status;
+	}
+
+	if ( $post_id > 0 && ! get_post( $post_id ) instanceof WP_Post ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_post_not_found',
+			__( 'The specified post could not be found.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-comments', false, 'comment', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$query_args = array(
+		'status'  => $status,
+		'number'  => $per_page,
+		'offset'  => ( $page - 1 ) * $per_page,
+		'orderby' => 'comment_date_gmt',
+		'order'   => 'DESC',
+		'search'  => $search,
+		'type'    => 'comment',
+	);
+
+	if ( $post_id > 0 ) {
+		$query_args['post_id'] = $post_id;
+	}
+
+	$comments = get_comments( $query_args );
+	$total    = (int) get_comments(
+		array_merge(
+			$query_args,
+			array(
+				'count'  => true,
+				'number' => 0,
+				'offset' => 0,
+			)
+		)
+	);
+
+	$records = array();
+
+	foreach ( $comments as $comment ) {
+		if ( $comment instanceof WP_Comment ) {
+			$records[] = wordpress_mcp_admin_format_comment_record( $comment, $include_content );
+		}
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-comments', true, 'comment', 0, $input_summary );
+
+	return array(
+		'comments'      => $records,
+		'post_id'       => $post_id,
+		'status'        => $status,
+		'page'          => $page,
+		'per_page'      => $per_page,
+		'found_comments' => $total,
+		'max_num_pages' => $per_page > 0 ? (int) ceil( $total / $per_page ) : 0,
+	);
+}
+
+/**
+ * コメントの状態を更新します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_update_comment_status( array $input = array() ) {
+	$comment_id     = isset( $input['comment_id'] ) ? (int) $input['comment_id'] : 0;
+	$input_summary  = wordpress_mcp_admin_build_input_summary( $input, array( 'comment_id', 'status' ) );
+	$status         = wordpress_mcp_admin_normalize_comment_moderation_status( $input['status'] ?? '' );
+
+	if ( $comment_id <= 0 ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_id',
+			__( 'A valid comment_id is required.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', false, 'comment', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	if ( is_wp_error( $status ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', false, 'comment', $comment_id, $input_summary, $status->get_error_code(), $status->get_error_message() );
+
+		return $status;
+	}
+
+	$comment = get_comment( $comment_id );
+
+	if ( ! $comment instanceof WP_Comment ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_comment_not_found',
+			__( 'The specified comment could not be found.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$updated = wp_set_comment_status( $comment_id, $status, true );
+
+	if ( ! $updated ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_update_comment_status_failed',
+			__( 'Failed to update the comment status.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$updated_comment = get_comment( $comment_id );
+
+	if ( ! $updated_comment instanceof WP_Comment ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_comment_not_found_after_update',
+			__( 'The comment status was updated but the comment could not be loaded afterwards.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/update-comment-status', true, 'comment', $comment_id, $input_summary );
+
+	return wordpress_mcp_admin_format_comment_record( $updated_comment, true );
+}
+
+/**
+ * コメントを削除します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_delete_comment( array $input = array() ) {
+	$comment_id    = isset( $input['comment_id'] ) ? (int) $input['comment_id'] : 0;
+	$force_delete  = ! empty( $input['force'] );
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'comment_id', 'force' ) );
+
+	if ( $comment_id <= 0 ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_id',
+			__( 'A valid comment_id is required.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comment', false, 'comment', 0, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$comment = get_comment( $comment_id );
+
+	if ( ! $comment instanceof WP_Comment ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_comment_not_found',
+			__( 'The specified comment could not be found.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comment', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$previous_status = (string) wp_get_comment_status( $comment );
+	$deleted         = wp_delete_comment( $comment_id, $force_delete );
+
+	if ( ! $deleted ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_delete_comment_failed',
+			__( 'Failed to delete the comment.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comment', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comment', true, 'comment', $comment_id, $input_summary );
+
+	return array(
+		'comment_id'       => $comment_id,
+		'post_id'          => (int) $comment->comment_post_ID,
+		'deleted'          => true,
+		'previous_status'  => $previous_status,
+		'force'            => $force_delete,
+	);
 }
 
 /**

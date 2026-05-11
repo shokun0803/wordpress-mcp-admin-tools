@@ -53,7 +53,8 @@ function wordpress_mcp_admin_render_audit_log_page(): void {
 		<p><?php echo esc_html__( 'The plugin publishes the following administrative actions to MCP clients.', 'wordpress-mcp-admin-tools' ); ?></p>
 		<ul class="ul-disc">
 			<li><?php echo esc_html__( 'Create posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
-			<li><?php echo esc_html__( 'Update existing posts and pages.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Update existing posts and pages, including their individual comment and ping settings.', 'wordpress-mcp-admin-tools' ); ?></li>
+			<li><?php echo esc_html__( 'Review comments, including spam comments, before moderating or deleting them.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Read and update arbitrary WordPress options exposed by core or plugins.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Inspect and update custom post type entries used by plugins for structured settings or content.', 'wordpress-mcp-admin-tools' ); ?></li>
 			<li><?php echo esc_html__( 'Read and update post meta and term meta without adding plugin-specific abilities.', 'wordpress-mcp-admin-tools' ); ?></li>
@@ -163,6 +164,21 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'name'        => 'wordpress-mcp-admin/delete-post',
 			'description' => __( 'Delete an existing post or move it to the trash.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'delete_posts',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/get-comments',
+			'description' => __( 'Retrieve comments with optional filtering so spam comments can be reviewed before moderation or deletion.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'moderate_comments',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/update-comment-status',
+			'description' => __( 'Approve, hold, mark as spam, or trash a comment.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'moderate_comments',
+		),
+		array(
+			'name'        => 'wordpress-mcp-admin/delete-comment',
+			'description' => __( 'Delete a comment or move it to the trash after review.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'moderate_comments',
 		),
 		array(
 			'name'        => 'wordpress-mcp-admin/create-page',
