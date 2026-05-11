@@ -7,6 +7,22 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Upgrader skin から WP_Error を安全に取得します。
+ *
+ * @param mixed $skin Upgrader skin。
+ * @return WP_Error|null
+ */
+function wordpress_mcp_admin_get_upgrader_skin_errors( $skin ): ?WP_Error {
+	if ( ! is_object( $skin ) || ! method_exists( $skin, 'get_errors' ) ) {
+		return null;
+	}
+
+	$errors = $skin->get_errors();
+
+	return $errors instanceof WP_Error ? $errors : null;
+}
+
+/**
  * 投稿編集権限を確認します。
  *
  * @param array<string, mixed> $input 入力値。
@@ -584,6 +600,7 @@ function wordpress_mcp_admin_format_comment_record( WP_Comment $comment, bool $i
 		'author_name'     => (string) $comment->comment_author,
 		'author_email'    => (string) $comment->comment_author_email,
 		'author_url'      => (string) $comment->comment_author_url,
+		'author_ip'       => (string) $comment->comment_author_IP,
 		'status'          => (string) wp_get_comment_status( $comment ),
 		'date_gmt'        => (string) $comment->comment_date_gmt,
 		'content_preview' => $content_preview,
@@ -595,6 +612,32 @@ function wordpress_mcp_admin_format_comment_record( WP_Comment $comment, bool $i
 	}
 
 	return $record;
+}
+
+/**
+ * コメント投稿元 IP アドレスを検証します。
+ *
+ * @param mixed $value 入力値。
+ * @return string|WP_Error
+ */
+function wordpress_mcp_admin_normalize_comment_author_ip( $value ) {
+	$author_ip = is_scalar( $value ) ? trim( sanitize_text_field( wp_unslash( (string) $value ) ) ) : '';
+
+	if ( '' === $author_ip ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_author_ip',
+			__( 'A valid author_ip is required.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	if ( false === filter_var( $author_ip, FILTER_VALIDATE_IP ) ) {
+		return new WP_Error(
+			'wordpress_mcp_admin_invalid_comment_author_ip',
+			__( 'The specified author_ip is not a valid IP address.', 'wordpress-mcp-admin-tools' )
+		);
+	}
+
+	return $author_ip;
 }
 
 /**
@@ -1386,7 +1429,7 @@ function wordpress_mcp_admin_sync_plugin_translation_updates( string $plugin_bas
 	}
 
 	if ( false === $upgrade_results ) {
-		$skin_error = $skin->get_errors();
+		$skin_error = wordpress_mcp_admin_get_upgrader_skin_errors( $skin );
 
 		if ( $skin_error instanceof WP_Error && $skin_error->has_errors() ) {
 			$result['message'] = $skin_error->get_error_message();
@@ -2486,6 +2529,7 @@ function wordpress_mcp_admin_get_site_health_test_result( WP_Site_Health $site_h
 		$response = rest_do_request( $request );
 
 		if ( is_wp_error( $response ) ) {
+			/** @var WP_Error $response */
 			return array(
 				'label'       => isset( $test['label'] ) && is_string( $test['label'] ) ? $test['label'] : __( 'Site Health test failed.', 'wordpress-mcp-admin-tools' ),
 				'status'      => 'critical',

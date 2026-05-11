@@ -332,6 +332,10 @@ function wordpress_mcp_admin_register_abilities(): void {
 						'type'        => 'string',
 						'description' => __( 'Optional search term matched against comment content and author fields.', 'wordpress-mcp-admin-tools' ),
 					),
+					'author_ip'  => array(
+						'type'        => 'string',
+						'description' => __( 'Optional author IP address to restrict results to comments from a single source IP.', 'wordpress-mcp-admin-tools' ),
+					),
 					'per_page' => array(
 						'type'        => 'integer',
 						'description' => __( 'Number of comments to return. Between 1 and 50.', 'wordpress-mcp-admin-tools' ),
@@ -361,6 +365,7 @@ function wordpress_mcp_admin_register_abilities(): void {
 								'author_name'     => array( 'type' => 'string' ),
 								'author_email'    => array( 'type' => 'string' ),
 								'author_url'      => array( 'type' => 'string' ),
+								'author_ip'       => array( 'type' => 'string' ),
 								'status'          => array( 'type' => 'string' ),
 								'date_gmt'        => array( 'type' => 'string' ),
 								'content_preview' => array( 'type' => 'string' ),
@@ -370,6 +375,7 @@ function wordpress_mcp_admin_register_abilities(): void {
 						),
 					),
 					'post_id' => array( 'type' => 'integer' ),
+					'author_ip' => array( 'type' => 'string' ),
 					'status' => array( 'type' => 'string' ),
 					'page' => array( 'type' => 'integer' ),
 					'per_page' => array( 'type' => 'integer' ),
@@ -424,6 +430,7 @@ function wordpress_mcp_admin_register_abilities(): void {
 					'author_name'     => array( 'type' => 'string' ),
 					'author_email'    => array( 'type' => 'string' ),
 					'author_url'      => array( 'type' => 'string' ),
+					'author_ip'       => array( 'type' => 'string' ),
 					'status'          => array( 'type' => 'string' ),
 					'date_gmt'        => array( 'type' => 'string' ),
 					'content_preview' => array( 'type' => 'string' ),
@@ -439,6 +446,78 @@ function wordpress_mcp_admin_register_abilities(): void {
 				'annotations'  => array(
 					'readonly'   => false,
 					'destructive' => false,
+					'idempotent' => false,
+				),
+			),
+		)
+	);
+
+	wp_register_ability(
+		'wordpress-mcp-admin/delete-comments-by-ip',
+		array(
+			'label'               => __( 'Delete Comments by IP', 'wordpress-mcp-admin-tools' ),
+			'description'         => __( 'Delete multiple comments from the same author IP address in one request after a spam pattern has been confirmed.', 'wordpress-mcp-admin-tools' ),
+			'category'            => 'wordpress-mcp-admin',
+			'execute_callback'    => 'wordpress_mcp_admin_execute_delete_comments_by_ip',
+			'permission_callback' => 'wordpress_mcp_admin_can_manage_comments',
+			'input_schema'        => array(
+				'type'       => 'object',
+				'properties' => array(
+					'comment_id' => array(
+						'type'        => 'integer',
+						'description' => __( 'Optional comment ID used to look up the source IP address to target.', 'wordpress-mcp-admin-tools' ),
+					),
+					'author_ip' => array(
+						'type'        => 'string',
+						'description' => __( 'Optional source IP address to target directly when known.', 'wordpress-mcp-admin-tools' ),
+					),
+					'status' => array(
+						'type'        => 'string',
+						'enum'        => array( 'all', 'approve', 'hold', 'spam', 'trash' ),
+						'description' => __( 'Optional comment status filter to limit which comments from this IP are deleted.', 'wordpress-mcp-admin-tools' ),
+					),
+					'limit' => array(
+						'type'        => 'integer',
+						'description' => __( 'Maximum number of comments to delete in one request. Between 1 and 100.', 'wordpress-mcp-admin-tools' ),
+					),
+					'force' => array(
+						'type'        => 'boolean',
+						'description' => __( 'Permanently delete when true. Otherwise the comments are trashed when supported.', 'wordpress-mcp-admin-tools' ),
+					),
+				),
+			),
+			'output_schema'       => array(
+				'type'       => 'object',
+				'properties' => array(
+					'author_ip' => array( 'type' => 'string' ),
+					'status' => array( 'type' => 'string' ),
+					'matched_count' => array( 'type' => 'integer' ),
+					'deleted_count' => array( 'type' => 'integer' ),
+					'failed_count' => array( 'type' => 'integer' ),
+					'force' => array( 'type' => 'boolean' ),
+					'truncated' => array( 'type' => 'boolean' ),
+					'results' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'comment_id' => array( 'type' => 'integer' ),
+								'deleted' => array( 'type' => 'boolean' ),
+								'previous_status' => array( 'type' => 'string' ),
+								'error' => array( 'type' => 'string' ),
+							),
+						),
+					),
+				),
+			),
+			'meta'                => array(
+				'show_in_rest' => true,
+				'mcp'          => array(
+					'public' => true,
+				),
+				'annotations'  => array(
+					'readonly'   => false,
+					'destructive' => true,
 					'idempotent' => false,
 				),
 			),

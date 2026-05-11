@@ -1023,13 +1023,24 @@ function wordpress_mcp_admin_execute_get_comments( array $input = array() ) {
 	$per_page        = isset( $input['per_page'] ) ? max( 1, min( 50, (int) $input['per_page'] ) ) : 20;
 	$page            = isset( $input['page'] ) ? max( 1, (int) $input['page'] ) : 1;
 	$include_content = ! empty( $input['include_content'] );
-	$input_summary   = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'status', 'search', 'per_page', 'page' ) );
+	$input_summary   = wordpress_mcp_admin_build_input_summary( $input, array( 'post_id', 'status', 'search', 'author_ip', 'per_page', 'page' ) );
 	$status          = wordpress_mcp_admin_normalize_comment_query_status( $input['status'] ?? 'all' );
+	$author_ip       = '';
 
 	if ( is_wp_error( $status ) ) {
 		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-comments', false, 'comment', 0, $input_summary, $status->get_error_code(), $status->get_error_message() );
 
 		return $status;
+	}
+
+	if ( array_key_exists( 'author_ip', $input ) && '' !== trim( (string) $input['author_ip'] ) ) {
+		$author_ip = wordpress_mcp_admin_normalize_comment_author_ip( $input['author_ip'] );
+
+		if ( is_wp_error( $author_ip ) ) {
+			wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/get-comments', false, 'comment', 0, $input_summary, $author_ip->get_error_code(), $author_ip->get_error_message() );
+
+			return $author_ip;
+		}
 	}
 
 	if ( $post_id > 0 && ! get_post( $post_id ) instanceof WP_Post ) {
@@ -1057,8 +1068,8 @@ function wordpress_mcp_admin_execute_get_comments( array $input = array() ) {
 		$query_args['post_id'] = $post_id;
 	}
 
-	$comments = get_comments( $query_args );
-	$total    = (int) get_comments(
+	$comments = wordpress_mcp_admin_get_comments_with_author_ip( $query_args, $author_ip );
+	$total    = (int) wordpress_mcp_admin_get_comments_with_author_ip(
 		array_merge(
 			$query_args,
 			array(
@@ -1066,7 +1077,8 @@ function wordpress_mcp_admin_execute_get_comments( array $input = array() ) {
 				'number' => 0,
 				'offset' => 0,
 			)
-		)
+		),
+		$author_ip
 	);
 
 	$records = array();
@@ -1082,12 +1094,40 @@ function wordpress_mcp_admin_execute_get_comments( array $input = array() ) {
 	return array(
 		'comments'      => $records,
 		'post_id'       => $post_id,
+		'author_ip'     => $author_ip,
 		'status'        => $status,
 		'page'          => $page,
 		'per_page'      => $per_page,
 		'found_comments' => $total,
 		'max_num_pages' => $per_page > 0 ? (int) ceil( $total / $per_page ) : 0,
 	);
+}
+
+/**
+ * 任意の投稿元 IP アドレスで絞り込んでコメントを取得します。
+ *
+ * @param array<string, mixed> $query_args WP_Comment_Query 用の引数。
+ * @param string               $author_ip 投稿元 IP アドレス。
+ * @return array<int, WP_Comment>|array<int, int>|int
+ */
+function wordpress_mcp_admin_get_comments_with_author_ip( array $query_args, string $author_ip = '' ) {
+	if ( '' === $author_ip ) {
+		return get_comments( $query_args );
+	}
+
+	global $wpdb;
+
+	$filter = static function ( array $clauses ) use ( $wpdb, $author_ip ): array {
+		$clauses['where'] .= $wpdb->prepare( " AND {$wpdb->comments}.comment_author_IP = %s", $author_ip );
+
+		return $clauses;
+	};
+
+	add_filter( 'comments_clauses', $filter );
+	$results = get_comments( $query_args );
+	remove_filter( 'comments_clauses', $filter );
+
+	return $results;
 }
 
 /**
@@ -1262,6 +1302,123 @@ function wordpress_mcp_admin_execute_delete_comments( array $input = array() ) {
 		return $error;
 	}
 
+	$delete_results = wordpress_mcp_admin_delete_comment_ids( $comment_ids, $force_delete );
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments', 0 === $delete_results['failed_count'], 'comment', 0, $input_summary, $delete_results['failed_count'] > 0 ? 'wordpress_mcp_admin_partial_comment_delete' : '', $delete_results['failed_count'] > 0 ? __( 'Some comments could not be deleted.', 'wordpress-mcp-admin-tools' ) : '' );
+
+	return array(
+		'deleted_count' => $delete_results['deleted_count'],
+		'failed_count'  => $delete_results['failed_count'],
+		'force'         => $force_delete,
+		'results'       => $delete_results['results'],
+	);
+}
+
+/**
+ * 同一 IP のコメントを一括削除します。
+ *
+ * @param array<string, mixed> $input 入力値。
+ * @return array<string, mixed>|WP_Error
+ */
+function wordpress_mcp_admin_execute_delete_comments_by_ip( array $input = array() ) {
+	$comment_id    = isset( $input['comment_id'] ) ? (int) $input['comment_id'] : 0;
+	$force_delete  = ! empty( $input['force'] );
+	$limit         = isset( $input['limit'] ) ? max( 1, min( 100, (int) $input['limit'] ) ) : 100;
+	$input_summary = wordpress_mcp_admin_build_input_summary( $input, array( 'comment_id', 'author_ip', 'status', 'limit', 'force' ) );
+	$status        = wordpress_mcp_admin_normalize_comment_query_status( $input['status'] ?? 'all' );
+	$author_ip     = '';
+
+	if ( is_wp_error( $status ) ) {
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments-by-ip', false, 'comment', $comment_id, $input_summary, $status->get_error_code(), $status->get_error_message() );
+
+		return $status;
+	}
+
+	if ( array_key_exists( 'author_ip', $input ) && '' !== trim( (string) $input['author_ip'] ) ) {
+		$author_ip = wordpress_mcp_admin_normalize_comment_author_ip( $input['author_ip'] );
+
+		if ( is_wp_error( $author_ip ) ) {
+			wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments-by-ip', false, 'comment', $comment_id, $input_summary, $author_ip->get_error_code(), $author_ip->get_error_message() );
+
+			return $author_ip;
+		}
+	}
+
+	if ( $comment_id > 0 ) {
+		$comment = get_comment( $comment_id );
+
+		if ( ! $comment instanceof WP_Comment ) {
+			$error = new WP_Error(
+				'wordpress_mcp_admin_comment_not_found',
+				__( 'The specified comment could not be found.', 'wordpress-mcp-admin-tools' )
+			);
+
+			wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments-by-ip', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+			return $error;
+		}
+
+		$author_ip = (string) $comment->comment_author_IP;
+	}
+
+	if ( '' === $author_ip ) {
+		$error = new WP_Error(
+			'wordpress_mcp_admin_missing_comment_author_ip',
+			__( 'Provide comment_id or author_ip to delete comments from the same IP address.', 'wordpress-mcp-admin-tools' )
+		);
+
+		wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments-by-ip', false, 'comment', $comment_id, $input_summary, $error->get_error_code(), $error->get_error_message() );
+
+		return $error;
+	}
+
+	$query_args = array(
+		'status'  => $status,
+		'number'  => $limit,
+		'offset'  => 0,
+		'orderby' => 'comment_date_gmt',
+		'order'   => 'DESC',
+		'type'    => 'comment',
+		'fields'  => 'ids',
+	);
+
+	$comment_ids = wordpress_mcp_admin_get_comments_with_author_ip( $query_args, $author_ip );
+	$total       = (int) wordpress_mcp_admin_get_comments_with_author_ip(
+		array_merge(
+			$query_args,
+			array(
+				'count'  => true,
+				'number' => 0,
+				'offset' => 0,
+			)
+		),
+		$author_ip
+	);
+
+	$delete_results = wordpress_mcp_admin_delete_comment_ids( is_array( $comment_ids ) ? array_map( 'intval', $comment_ids ) : array(), $force_delete );
+
+	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments-by-ip', 0 === $delete_results['failed_count'], 'comment', $comment_id, $input_summary, $delete_results['failed_count'] > 0 ? 'wordpress_mcp_admin_partial_comment_delete' : '', $delete_results['failed_count'] > 0 ? __( 'Some comments from this IP address could not be deleted.', 'wordpress-mcp-admin-tools' ) : '' );
+
+	return array(
+		'author_ip'     => $author_ip,
+		'status'        => $status,
+		'matched_count' => $total,
+		'deleted_count' => $delete_results['deleted_count'],
+		'failed_count'  => $delete_results['failed_count'],
+		'force'         => $force_delete,
+		'truncated'     => $total > $limit,
+		'results'       => $delete_results['results'],
+	);
+}
+
+/**
+ * コメント ID の一覧を削除します。
+ *
+ * @param array<int, int> $comment_ids コメント ID 一覧。
+ * @param bool            $force_delete 完全削除する場合は true。
+ * @return array<string, mixed>
+ */
+function wordpress_mcp_admin_delete_comment_ids( array $comment_ids, bool $force_delete ): array {
 	$results       = array();
 	$deleted_count = 0;
 	$failed_count  = 0;
@@ -1305,12 +1462,9 @@ function wordpress_mcp_admin_execute_delete_comments( array $input = array() ) {
 		);
 	}
 
-	wordpress_mcp_admin_log_ability_execution( 'wordpress-mcp-admin/delete-comments', 0 === $failed_count, 'comment', 0, $input_summary, $failed_count > 0 ? 'wordpress_mcp_admin_partial_comment_delete' : '', $failed_count > 0 ? __( 'Some comments could not be deleted.', 'wordpress-mcp-admin-tools' ) : '' );
-
 	return array(
 		'deleted_count' => $deleted_count,
 		'failed_count'  => $failed_count,
-		'force'         => $force_delete,
 		'results'       => $results,
 	);
 }
@@ -1636,7 +1790,7 @@ function wordpress_mcp_admin_execute_install_theme( array $input = array() ) {
 	}
 
 	if ( false === $result ) {
-		$skin_error = $upgrader->skin->get_errors();
+		$skin_error = wordpress_mcp_admin_get_upgrader_skin_errors( $upgrader->skin );
 		$error      = $skin_error instanceof WP_Error && $skin_error->has_errors()
 			? $skin_error
 			: new WP_Error( 'wordpress_mcp_admin_theme_install_failed', __( 'Failed to install the theme.', 'wordpress-mcp-admin-tools' ) );
@@ -2148,7 +2302,7 @@ function wordpress_mcp_admin_execute_install_plugin( array $input = array() ) {
 	}
 
 	if ( false === $result ) {
-		$skin_error = $upgrader->skin->get_errors();
+		$skin_error = wordpress_mcp_admin_get_upgrader_skin_errors( $upgrader->skin );
 		$error      = $skin_error instanceof WP_Error && $skin_error->has_errors()
 			? $skin_error
 			: new WP_Error( 'wordpress_mcp_admin_plugin_install_failed', __( 'Failed to install the plugin.', 'wordpress-mcp-admin-tools' ) );
@@ -2540,10 +2694,15 @@ function wordpress_mcp_admin_execute_get_plugins( array $input = array() ): arra
 	}
 
 	$include_inactive = ! isset( $input['include_inactive'] ) || ! empty( $input['include_inactive'] );
+	/** @var array<string, array<string, mixed>> $plugins */
 	$plugins          = get_plugins();
 	$records          = array();
 
 	foreach ( $plugins as $plugin_basename => $plugin_data ) {
+		if ( ! is_string( $plugin_basename ) ) {
+			continue;
+		}
+
 		$record = wordpress_mcp_admin_format_plugin_record( $plugin_basename, $plugin_data );
 
 		if ( ! $include_inactive && 'inactive' === $record['status'] ) {

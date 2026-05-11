@@ -186,6 +186,11 @@ function wordpress_mcp_admin_get_admin_page_abilities(): array {
 			'capability'  => 'moderate_comments',
 		),
 		array(
+			'name'        => 'wordpress-mcp-admin/delete-comments-by-ip',
+			'description' => __( 'Delete comments that share the same author IP address after a spam pattern has been confirmed.', 'wordpress-mcp-admin-tools' ),
+			'capability'  => 'moderate_comments',
+		),
+		array(
 			'name'        => 'wordpress-mcp-admin/create-page',
 			'description' => __( 'Create a new page with the provided content.', 'wordpress-mcp-admin-tools' ),
 			'capability'  => 'edit_pages',
