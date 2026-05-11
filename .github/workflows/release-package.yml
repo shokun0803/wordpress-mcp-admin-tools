@@ -1,0 +1,63 @@
+name: Release Package
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to package and upload
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  upload-wordpress-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Determine tag
+        id: tag
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+
+          if [[ -z "$tag" ]]; then
+            echo "Tag could not be determined." >&2
+            exit 1
+          fi
+
+          echo "value=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.value }}
+
+      - name: Build WordPress package
+        id: package
+        env:
+          TAG_NAME: ${{ steps.tag.outputs.value }}
+        run: |
+          version="${TAG_NAME#v}"
+          asset_name="wordpress-mcp-admin-tools-${version}.zip"
+
+          git archive \
+            --format=zip \
+            --prefix=wordpress-mcp-admin-tools/ \
+            --output="$asset_name" \
+            "$TAG_NAME"
+
+          echo "asset_name=$asset_name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload WordPress package
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.tag.outputs.value }}
+          ASSET_NAME: ${{ steps.package.outputs.asset_name }}
+        run: |
+          gh release upload "$TAG_NAME" "$ASSET_NAME" --clobber

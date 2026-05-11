@@ -20,6 +20,12 @@ MCP クライアントから WordPress の管理操作を行うための Ability
 - 投稿と固定ページの discussion 設定更新を強化し、コメント受付やピンバック受付の切替に対応
 - README にコメントモデレーションとプラグイン運用 Ability の説明を整理して追記
 
+## リリース運用
+
+- GitHub Release を publish すると、GitHub Actions が WordPress 用 ZIP を自動生成して添付します。
+- WordPress にアップロードする際は、Release ページの添付ファイル `wordpress-mcp-admin-tools-x.y.z.zip` を使用してください。
+- GitHub が自動生成する Source code の ZIP は開発者向けで、既存プラグインの更新用パッケージには適しません。
+
 ## 主な機能
 
 - 投稿の新規作成
